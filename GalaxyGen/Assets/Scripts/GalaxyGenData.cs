@@ -45,9 +45,6 @@ public class GalaxyGenData
 
 	//Ring specifics (0-1)
 	public float ringSize = 0.5f;
-
-    //seed
-    public int randSeed;
 }
 
 //Data used for undiscoverd, ungenerated solar system. 

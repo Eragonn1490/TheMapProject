@@ -11,8 +11,7 @@ public class GalaxyGen
 	//Returns false on fail
 	public static bool GenGalaxy(GalaxyGenData data)
 	{
-        //Randomly choose star count
-        Random.InitState(data.randSeed);
+		//Randomly choose star count
 		int starCount = Random.Range(data.minStar, data.maxStar);
 
 		//Generate based on shape
@@ -86,8 +85,7 @@ public class GalaxyGen
 
 	public static void PreviewData(GalaxyGenData data)
 	{
-        //Randomly choose star count
-        Random.InitState(data.randSeed);
+		//Randomly choose star count
 		int starCount = Random.Range(data.minStar, data.maxStar);
 
 		//Generate based on shape
@@ -122,10 +120,9 @@ public class GalaxyGen
 	{
 		//Create empty points
 		List<Vector2> points = new List<Vector2>(starCount);
-        Debug.Log("starcount is " + starCount + " randseed is " + data.randSeed);
-        //Randomly generate each point's position inside of radius and star shape
-        Random.InitState(data.randSeed);
-        for (int i = 0; i < starCount; i++)
+
+		//Randomly generate each point's position inside of radius and star shape
+		for (int i = 0; i < starCount; i++)
 		{
 			//Find random distance from center
 			float dist = Random.Range(0, data.scale);
@@ -160,9 +157,8 @@ public class GalaxyGen
 		List<Vector2> points = new List<Vector2>(starCount);
 		points.AddRange(new Vector2[starCount]);
 
-        //Randomly generate each point's position inside of radius
-        Random.InitState(data.randSeed);
-        for (int i = 0; i < starCount; i++)
+		//Randomly generate each point's position inside of radius
+		for (int i = 0; i < starCount; i++)
 			points[i] = Random.insideUnitCircle * data.scale;
 
 		return points;
@@ -174,9 +170,8 @@ public class GalaxyGen
 		List<Vector2> points = new List<Vector2>(starCount);
 		points.AddRange(new Vector2[starCount]);
 
-        //Place each point x dist away from last point
-        Random.InitState(data.randSeed);
-        points[0] = Vector2.zero;
+		//Place each point x dist away from last point
+		points[0] = Vector2.zero;
 		for (int i = 1; i < starCount; i++)
 		{
 			//Gen angle
@@ -208,9 +203,8 @@ public class GalaxyGen
 		List<Vector2> points = new List<Vector2>(starCount);
 		points.AddRange(new Vector2[starCount]);
 
-        //Randomly generate each point's position inside of radius and outside of inner rad
-        Random.InitState(data.randSeed);
-        for (int i = 0; i < starCount; i++)
+		//Randomly generate each point's position inside of radius and outside of inner rad
+		for (int i = 0; i < starCount; i++)
 		{
 			points[i] = Random.insideUnitCircle * data.scale;
 			if (points[i].magnitude < data.scale * data.ringSize)

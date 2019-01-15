@@ -143,8 +143,6 @@ public class GenWindow : EditorWindow
 		EditorGUILayout.Space();
 		EditorGUILayout.LabelField("Save Dir");
 
-        
-
 		EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.LabelField("Assets/", fadedStyle, GUILayout.Width(47));
 			saveRelDir = EditorGUILayout.TextField(saveRelDir);
@@ -153,14 +151,8 @@ public class GenWindow : EditorWindow
 
 		data.saveFileDir = "Assets/" + saveRelDir + ".bytes";
 
-        EditorGUILayout.Space();
-
-        EditorGUILayout.BeginHorizontal();
-        data.randSeed = EditorGUILayout.IntField("RandomSeed", data.randSeed);
-        EditorGUILayout.EndHorizontal();
-
-        //Generate and save galaxy
-        EditorGUILayout.Space();
+		//Generate and save galaxy
+		EditorGUILayout.Space();
 		if (GUILayout.Button("Save as Galaxy", GUILayout.Height(40)))
 			GalaxyGen.GenGalaxy(data);
 
