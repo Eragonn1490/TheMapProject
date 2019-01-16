@@ -14,7 +14,16 @@ public class SystemInfo : MonoBehaviour
 	// Use this for initialization
 	void Start ()
     {
-        solarSystemUI.text = starName.text;
+        if (!starName)
+        {
+            starName = this.GetComponent<Text>();
+        }
+        Debug.Log("setting systeminfo for" + this.gameObject.name);
+        if (solarSystemUI)
+        {
+            solarSystemUI.text = starName.text;
+        }
+        
         celestialObjectSize.ToString();
 	}
 	
