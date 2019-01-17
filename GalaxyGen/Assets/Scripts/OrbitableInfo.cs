@@ -21,6 +21,9 @@ public class OrbitableInfo : MonoBehaviour
     public float orbitStart;
     public bool rotatesClockwise;
 
+    public int numMoons;
+    public List<OrbitableInfo> moons;
+
     // Start is called before the first frame update
     void Start()
     {

@@ -18,7 +18,7 @@ public class SystemInfo : MonoBehaviour
         {
             starName = this.GetComponent<Text>();
         }
-        Debug.Log("setting systeminfo for" + this.gameObject.name);
+        //Debug.Log("setting systeminfo for" + this.gameObject.name);
         if (solarSystemUI)
         {
             solarSystemUI.text = starName.text;

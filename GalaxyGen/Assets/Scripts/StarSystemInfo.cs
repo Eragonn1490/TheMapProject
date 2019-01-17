@@ -6,6 +6,7 @@ public class StarSystemInfo : MonoBehaviour
 {
     public string systemName;
     public int generatedSystemSeed;
+    public float systemDistanceScaleMod;
     public Generation_Solar_System.STARTEMPERATURES_TYPES mainBodyType;
     public Generation_Solar_System.SYSTEM_SIZE systemSize;
     public Generation_Solar_System.SYSTEM_TYPE systemType;
@@ -41,6 +42,11 @@ public class StarSystemInfo : MonoBehaviour
         habRange = inHab;
         coldRange = inCold;
         asteroidBeltRange = inAsteroid;
+    }
+
+    public void SetDistanceScale(float inDistanceScale)
+    {
+        systemDistanceScaleMod = inDistanceScale;
     }
 
     public void AddOrbitalObject(OrbitableInfo inObject)

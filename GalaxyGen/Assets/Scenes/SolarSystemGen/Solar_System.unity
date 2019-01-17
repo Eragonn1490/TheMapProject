@@ -372,7 +372,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &289845927
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1235,55 +1235,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30766a2467c69ab49a6abe4f51f58719, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  starSizes:
-  - 15
-  - 7
-  - 2.5
-  - 1.3
-  - 1.2
-  - 1.1
-  - 1
-  - 0.9
-  - 0.7
-  - 0.4
-  - 500
-  - 75
-  - 0.45
-  - 0.01
-  - 0.008
-  starChanceMods:
-  - 0.1
-  - 0.12
-  - 0.25
-  - 0.5
-  - 0.8
-  - 0.9
-  - 1
-  - 1.4
-  - 1.8
-  - 2.5
-  - 0.05
-  - 0.02
-  - 4.5
-  - 0.05
-  - 0.25
-  starTemps:
-  - 35000
-  - 17000
-  - 9000
-  - 7000
-  - 6500
-  - 6000
-  - 5500
-  - 4500
-  - 4000
-  - 3000
-  - 2500
-  - 45000
-  - 3000
-  - 100000
-  - 1000
+  FORCESYSTEMTYPE: 1
+  FORCETYPE: 11
   diameterBaseOfDefaultMiles: 865000
+  baseSpeedDefaultEarthMPH: 66615
+  orbitalVelocityModifier: 0.0002
   blackHoleChance: 0.00166
   emptyChance: 0.0025
   asteroidChance: 0.00125
@@ -1372,7 +1328,7 @@ MonoBehaviour:
     planetsMax: 28
   extraLargeSystem:
     planetsMin: 28
-    planetsMax: 70
+    planetsMax: 40
   baseGasGiantChance: 20
   baseAsteroidChance: 25
   systemContainer: {fileID: 0}
