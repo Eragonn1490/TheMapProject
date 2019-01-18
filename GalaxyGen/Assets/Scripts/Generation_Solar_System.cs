@@ -16,7 +16,8 @@ public class Generation_Solar_System : MonoBehaviour
     private float[] starTemps = new float[]        {20000f       , 17000f         , 9000f           , 7000f     , 6500f      , 6000f      , 5500f     , 4500f      , 4000f   , 3000f   , 2500f        , 30000f       , 3000f        , 100000f        , 1000f            };
     private float[] starDistanceMods = new float[] {.3f          , .4f            , .7f             , .8f       , .9f        , 1.0f       , 1.0f      , 1.2f       , 1.4f    , 1.8f    , .8f         , .15f         , 2.5f         , 2.0f           , 3.0f             };
     private int  [] maxPlanetsSystem = new int[]   {100          , 100            , 80              , 50        , 48         , 46         , 42        , 36         , 24      , 20      , 20           , 100          , 12           , 10             , 8                };
-
+    private float minOrbitalSpeed = .4f;
+    private float maxOrbitalSpeed = 45f;
     //moon stuff, dump into better place later
     private float hotRangeMoonChance = .15f;
     private float hotRangeChanceOfAnotherMoon = .25f;
@@ -32,7 +33,7 @@ public class Generation_Solar_System : MonoBehaviour
     private float coldRangeMoonIsAnotherPlanetChance = .2f; //less chance than hot but much more potential chances
     private float gasChanceMoonModifier = 3.0f;
     private int gasChanceMoonMaxModifier = 4;
-
+    
 
     //some reduction in values for smaller system on number of planets due to scale, can be modified or removed.
     //reduced size and temperatures of some things to clamp size within safe float distances
@@ -69,7 +70,7 @@ public class Generation_Solar_System : MonoBehaviour
     public int universeSeed;
     public bool GENSYSTEM;
     public bool ALSOGENOBJECTS;
-    public float systemGenScale = 1.0f; //modification to size on gen for everything.
+    public float systemGenScale = 1.0f; //modification to size on gen for everything, not currently used
 
 
     public enum SYSTEM_REGION_RANGES { REGION_HOT, REGION_HAB, REGION_COLD, REGION_ASTEROID };
@@ -81,7 +82,7 @@ public class Generation_Solar_System : MonoBehaviour
     public Sprite[] starSpriteResources;
     //public enum PLANETTYPESNORMAL { PLANET0, PLANET1, PLANET2, PLANET3 }; //fill out for defined types if desired
     //public enum MOONTYPESNORMAL { MOON0, MOON1, MOON2, MOON3, MOON4, MOON5};
-    public enum ORBITAL_TYPES { ORBITAL_PLANET, ORBITAL_GAS_GIANT, ORBITAL_ASTEROID, ORTIBAL_MOON };
+    public enum ORBITAL_TYPES {ORBITAL_SUN, ORBITAL_BLACK_HOLE, ORBITAL_PLANET, ORBITAL_GAS_GIANT, ORBITAL_ASTEROID, ORTIBAL_MOON }; //how it looks
     public int spriteResourceHotEnd;
     public int spriteResourceHabEnd;
     //cold end is length
@@ -218,9 +219,9 @@ public class Generation_Solar_System : MonoBehaviour
         asteroidRange.rangeMaxAU = coldRange.rangeMinAU + Random.Range(0, (coldRange.rangeMaxAU - coldRange.rangeMaxAU) / 12f);
         bool hasAsteroidBelt = true; //set randomly
 
-        Debug.Log("hot range is " + hotRange.rangeMinAU + " to " + hotRange.rangeMaxAU);
-        Debug.Log("hab range is " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
-        Debug.Log("cold range is " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
+        //Debug.Log("hot range is " + hotRange.rangeMinAU + " to " + hotRange.rangeMaxAU);
+        //Debug.Log("hab range is " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
+        //Debug.Log("cold range is " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
 
 
         //generate star system info for celestial object
@@ -291,8 +292,8 @@ public class Generation_Solar_System : MonoBehaviour
         for (int i = 0; i < numPlanets; i++)
         {
             Debug.Log("generating planet " + i);
-            OrbitableInfo genPlanet = GeneratePlanet(orbitalsGenerated, starSystemInfo.systemDistanceScaleMod, hotRange, habRange, coldRange, asteroidRange, true, starSystemInfo.generatedSystemSeed, i);
-            genPlanet.planetName = genPlanet.orbitalType.ToString() + " " + i + " " + genPlanet.orbitalRange.ToString() + " "; //name later based on distances from central object and star system name
+            OrbitableInfo genPlanet = GeneratePlanet(ref orbitalsGenerated, starSystemInfo.systemDistanceScaleMod, hotRange, habRange, coldRange, asteroidRange, true, starSystemInfo.generatedSystemSeed, i);
+            genPlanet.orbitalName = genPlanet.orbitalType.ToString() + " " + i + " " + genPlanet.orbitalRange.ToString() + " "; //name later based on distances from central object and star system name
             starSystemInfo.AddOrbitalObject(genPlanet);
             if ( i > 75)
             {
@@ -309,7 +310,7 @@ public class Generation_Solar_System : MonoBehaviour
 
     
 
-    OrbitableInfo GeneratePlanet(List<OrbitableInfo> preGenned, float systemScale, Star_Region_Range hotRange, Star_Region_Range habRange, Star_Region_Range coldRange, Star_Region_Range asteroidRange, bool hasAsteroidBelt, int baseSeed, int planetNum) //generate planet information: type of planet, size of planet, planet coloration (which sprite to use), gravity, etc. 
+    OrbitableInfo GeneratePlanet(ref List<OrbitableInfo> preGenned, float systemScale, Star_Region_Range hotRange, Star_Region_Range habRange, Star_Region_Range coldRange, Star_Region_Range asteroidRange, bool hasAsteroidBelt, int baseSeed, int planetNum) //generate planet information: type of planet, size of planet, planet coloration (which sprite to use), gravity, etc. 
     {
         //determine orbital object type
         float modifiedAsteroidChance = baseAsteroidChance;
@@ -339,9 +340,9 @@ public class Generation_Solar_System : MonoBehaviour
         }
 
         //place chances depending on type. TODO: editable baselines.
-        float chanceHot = 33.3f;
-        float chanceHab = 33.3f;
-        float chanceCold = 33.3f;
+        float chanceHot = 15f;
+        float chanceHab = 30f;
+        float chanceCold = 55f;
         float chanceAsteroid = 0.0f;
 
         if (orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
@@ -375,44 +376,48 @@ public class Generation_Solar_System : MonoBehaviour
 
         if (hasAsteroidBelt)
         {  //dont spawn these inside the asteroid belt
-            Debug.Log("hab starts at " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
-            Debug.Log("cold range starts at " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
+            //Debug.Log("hab starts at " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
+            //Debug.Log("cold range starts at " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
             habRange.rangeMaxAU = asteroidRange.rangeMinAU;
             coldRange.rangeMinAU = asteroidRange.rangeMaxAU;
-            Debug.Log("hab range is now " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
-            Debug.Log("cold range is now " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
+            //Debug.Log("hab range is now " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
+            //Debug.Log("cold range is now " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
         }
         Star_Region_Range targetRange = hotRange;
         if (rangePlacement == SYSTEM_REGION_RANGES.REGION_HAB)
         {
             targetRange = habRange;
-            Debug.Log("target range is in hab range");
+            //Debug.Log("target range is in hab range");
         }
         else if (rangePlacement == SYSTEM_REGION_RANGES.REGION_COLD)
         {
             targetRange = coldRange;
-            Debug.Log("target range is in cold range");
+            //Debug.Log("target range is in cold range");
         }
         else if (rangePlacement == SYSTEM_REGION_RANGES.REGION_ASTEROID)
         {
             targetRange = asteroidRange;
-            Debug.Log("target range is in asteroid range");
+            //Debug.Log("target range is in asteroid range");
         }
         else
         {
-            Debug.Log("target range is in hot range");
+            //Debug.Log("target range is in hot range");
         }
 
 
-
+        List<float> competingRanges = new List<float>(); //list of already existing planet ranges for comparison. idea is to make a set of ranges for any spawnable location, check if it can spawn there at all, move to the next, etc, and cancel out if everything is filled.
+        for (int i = 0; i < preGenned.Count; i++)
+        {
+            competingRanges.Add(preGenned[i].distanceFromCenterAU);
+        }
         //determine actual distance from center object.
         float AUDistance = Random.Range(targetRange.rangeMinAU, targetRange.rangeMaxAU);
         //TODO: determine if inside anothers orbit. Alternatively: make blocking ranges and piecemeal them together before generating range.
-        Debug.Log("set AU distance to " + AUDistance);
+        //Debug.Log("set AU distance to " + AUDistance);
 
-        Debug.Log("distance scale mod is " + systemScale);
+        //Debug.Log("distance scale mod is " + systemScale);
         float unityDistance = AUDistance * AUtoSystemScale * systemScale;
-        Debug.Log("unity distance is " + unityDistance);
+        //Debug.Log("unity distance is " + unityDistance);
         float modifiedSizeScale = basePlanetScale + Random.Range((basePlanetScale / 8f) * -1f, (basePlanetScale / 8f)); //TODO: determine acceptable size mods in editable format
         if (orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
         {
@@ -426,6 +431,8 @@ public class Generation_Solar_System : MonoBehaviour
         //if (!canGenerate) //no space left in that orbital region, by minimumAUDistanceOfplanets there
         //    return null;
         OrbitableInfo planetInfo = new OrbitableInfo();
+        planetInfo.orbitalID = planetNum;
+        planetInfo.orbitTarget = -1; //central object
         planetInfo.orbitalType = orbitalType;
         planetInfo.orbitalRange = rangePlacement;
         planetInfo.distanceFromCenterAU = AUDistance;
@@ -447,13 +454,13 @@ public class Generation_Solar_System : MonoBehaviour
         //1 / 1  = 1
         //conversion to mph = * baseSpeedDefaultEarthMPH
 
-        Debug.Log("distance from center in AU is " + planetInfo.distanceFromCenterAU);
-        Debug.Log("base default earth speed is " + baseSpeedDefaultEarthMPH);
-        Debug.Log("orbital velocity modifier is " + orbitalVelocityModifier);
+        //Debug.Log("distance from center in AU is " + planetInfo.distanceFromCenterAU);
+        //Debug.Log("base default earth speed is " + baseSpeedDefaultEarthMPH);
+        //Debug.Log("orbital velocity modifier is " + orbitalVelocityModifier);
         float modSpeed = baseSpeedDefaultEarthMPH * orbitalVelocityModifier;
-        Debug.Log("modspeed is " + modSpeed);
+        //Debug.Log("modspeed is " + modSpeed);
         float orbitPeriod = 1.0f / Mathf.Sqrt(planetInfo.distanceFromCenterAU) * modSpeed;
-        Debug.Log("orbit period is " + orbitPeriod);
+        //Debug.Log("orbit period is " + orbitPeriod);
         planetInfo.orbitSpeed = orbitPeriod; //note: this is actually deterministic depending on star / central object mass/gravity and distance away, calculations above
         planetInfo.rotatesClockwise = (Random.Range(0.0f, 1.0f) < .5f? true: false);
 
@@ -480,18 +487,21 @@ public class Generation_Solar_System : MonoBehaviour
             }
         }
 
-        GeneratePlanetsMoons(ref planetInfo);
-
+        GeneratePlanetsMoons(ref planetInfo, baseSeed);
+        Debug.Log("planet has " + planetInfo.numMoons);
+        preGenned.Add(planetInfo);
 
         return planetInfo;
     }
 
-    void GeneratePlanetsMoons(ref OrbitableInfo planetInfo)
+    void GeneratePlanetsMoons(ref OrbitableInfo planetInfo, int baseSeed)
     {
+        
         if (planetInfo.orbitalType == ORBITAL_TYPES.ORBITAL_ASTEROID || planetInfo.orbitalType == ORBITAL_TYPES.ORTIBAL_MOON)
         {
             return; //no moons here?
         }
+        Random.InitState((baseSeed + planetInfo.orbitalID) * 87 + 3721);
         float moonChance = 0.0f;
         float chanceOfAdditionalMoons = 0.0f;
         float chanceMoonIsAPlanet = 0.0f;
@@ -534,10 +544,85 @@ public class Generation_Solar_System : MonoBehaviour
                 numMoonsToGen += Random.Range(1, maxMoons);
             }
         }
-
+        planetInfo.numMoons = numMoonsToGen;
         for (int i = 0; i < numMoonsToGen; i++)
         {
             //gen moon into orbital
+            //each moon is similar to a planet but it orbits the planet instead, so all references to its orbitable target is the planet proper.
+            OrbitableInfo newMoon = new OrbitableInfo();
+
+            newMoon.orbitalID = i;
+            newMoon.orbitalName = "Moon " + i;
+            newMoon.orbitalOrder = i; //should set this by distance as well
+            newMoon.orbitTarget = planetInfo.orbitalID;
+            newMoon.orbitalType = ORBITAL_TYPES.ORTIBAL_MOON;
+            newMoon.orbitalRange = planetInfo.orbitalRange;
+
+            //determine if its a planet instead of a moon
+            float moonTypeRoll = Random.Range(0.0f, 1.0f);
+            if (moonTypeRoll < chanceMoonIsAPlanet)
+            {
+                newMoon.orbitalType = ORBITAL_TYPES.ORBITAL_PLANET;
+            }
+            //sprite id by type
+            if (newMoon.orbitalType == ORBITAL_TYPES.ORTIBAL_MOON)
+            {
+                newMoon.spritePlanetResourceID = Random.Range(0, moonSpriteResources.Length);
+            }
+            else if (newMoon.orbitalType == ORBITAL_TYPES.ORBITAL_PLANET)
+            {
+                newMoon.spritePlanetResourceID = Random.Range(0, planetSpriteResources.Length);
+            }
+
+            //moon distance gen: moon from earth is about 0.00257 AU, at 238,856 miles.  Callisto from jupiter is 1,170,042 miles at ~.0126 au, Pasiphae is 14,602,223 at .157 AU. lets set range from .00225 AU to .175 AU
+            //will probably need to set some factors, like if its around a gas giant, or if its another planet, etc.
+            //need to change actual values due to unity scaling issues
+            float moonMinRangeAU = .0115f;
+            float moonMaxRangeAU = .05f;
+            if (planetInfo.orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
+            {
+                moonMinRangeAU = .0925f; //need to offset because gas giants are bigger
+                moonMaxRangeAU = .155f;
+            }
+            if (newMoon.orbitalType == ORBITAL_TYPES.ORBITAL_PLANET)
+            {
+                moonMinRangeAU *= 1.25f;
+                moonMaxRangeAU *= 1.25f;
+            }
+            float moonDistRangeAU = Random.Range(moonMinRangeAU, moonMaxRangeAU);
+            float moonDistUnityScale = moonDistRangeAU * AUtoSystemScale;
+
+            newMoon.distanceFromCenterAU = moonDistRangeAU;
+            newMoon.distanceFromCenterUnityScale = moonDistUnityScale;
+            float moonUnityScale = .05f;
+            moonUnityScale += Random.Range(-.01f, .02f);
+            newMoon.planetUnityScale = moonUnityScale;
+            newMoon.orbitSize = new Vector2(newMoon.distanceFromCenterUnityScale, newMoon.distanceFromCenterUnityScale + Random.Range(-newMoon.distanceFromCenterUnityScale / 10f, newMoon.distanceFromCenterUnityScale / 10f));
+            newMoon.orbitOffset = new Vector2(Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f), Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f)); //may need tweaking for proper offset ranges.
+
+            newMoon.orbitAngle = Random.Range(0, 360f);
+            //velocity of Satellite motion: equal to SQRT of (G * Mcentral)/R^2   where G = 6.673 * 10^-11 N * m^2/kg^2
+            //therefore:  determine G * Mcentral aka determine value by size of planet, or calculate planet mass from a density calculation, then divide by R at distanceAU, then take the square root of that    
+            float orbitCalcValMod = .15f;
+            float orbitMassCalc = planetInfo.planetUnityScale * orbitCalcValMod;
+            orbitMassCalc /= newMoon.distanceFromCenterAU;
+            float orbitPeriod = Mathf.Sqrt(orbitMassCalc);
+            
+            if (orbitPeriod < minOrbitalSpeed)
+            {
+                orbitPeriod = minOrbitalSpeed; 
+            }
+            if (orbitPeriod > maxOrbitalSpeed)
+            {
+                orbitPeriod = maxOrbitalSpeed;
+            }
+            newMoon.orbitSpeed = orbitPeriod; //may need to tweak moon speed differently
+            newMoon.orbitStart = Random.Range(0, 360f);
+            newMoon.rotatesClockwise = Random.Range(0, 1.0f) < .5f ? true : false;
+            newMoon.numMoons = 0;
+            newMoon.moons = null;
+
+            planetInfo.moons.Add(newMoon);
         }
 
 
@@ -545,6 +630,7 @@ public class Generation_Solar_System : MonoBehaviour
 
     void GenerateSystemObjects(StarSystemInfo infoBase)
     {
+        Debug.Log("Generating System Objects");
         //generate system gameobject, add any system handler scripts to this
         if (systemContainer)
         {
@@ -560,9 +646,16 @@ public class Generation_Solar_System : MonoBehaviour
         {
             Debug.Log("generating orbitals count for " + i + " of " + infoBase.orbitals.Count);
             GameObject newPlanet = GeneratePlanetGameobject(infoBase.orbitals[i], infoBase, systemContainer.gameObject);
+            for (int m = 0; m < infoBase.orbitals[i].numMoons; m++)
+            {
+                Debug.Log("Genning moon " + m);
+                GameObject newMoon = GenerateMoonGameobject(infoBase.orbitals[i].moons[m], newPlanet, infoBase);
+            }
         }
 
     }
+
+    
 
     //process to build a planet:
     //Planet Gameobject named: Planet_Type
@@ -618,7 +711,7 @@ public class Generation_Solar_System : MonoBehaviour
     GameObject GeneratePlanetGameobject(OrbitableInfo planetInfo, StarSystemInfo infoBase, GameObject centerObject)
     {
         Debug.Log("generating system planet object");
-        GameObject newPlanet = new GameObject(planetInfo.planetName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
+        GameObject newPlanet = new GameObject(planetInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
         newPlanet.transform.parent = centerObject.transform;
         var orbitCopy = newPlanet.AddComponent<OrbitableInfo>();
         orbitCopy.SetCopyFrom(planetInfo);
@@ -675,6 +768,74 @@ public class Generation_Solar_System : MonoBehaviour
         orbitSet.angle = planetInfo.orbitAngle;
         orbitSet.clockWise = planetInfo.rotatesClockwise;
         orbitSet.drawGizmo = true;
+        Debug.Log("done generating planet");
         return newPlanet;
+    }
+
+    GameObject GenerateMoonGameobject(OrbitableInfo moonInfo, GameObject parentObject, StarSystemInfo infoBase)
+    {
+        Debug.Log("<b><color=red>MAKIN DA MOON</color></b>"); 
+        GameObject newMoon = new GameObject(moonInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
+        newMoon.transform.parent = parentObject.transform;
+        var orbitCopy = newMoon.AddComponent<OrbitableInfo>();
+        orbitCopy.SetCopyFrom(moonInfo);
+        GameObject spriteObject = new GameObject("Sprite", typeof(SpriteRenderer));
+        spriteObject.transform.parent = newMoon.transform;
+        GameObject planetHighlight = new GameObject("Planet Highlight", typeof(SpriteRenderer));
+        planetHighlight.transform.parent = newMoon.transform; //TODO set up base sprite for highlighter
+        GameObject systemInfo = new GameObject("System Info", typeof(CanvasRenderer), typeof(Text), typeof(SystemInfo));
+        systemInfo.transform.parent = newMoon.transform;
+        GameObject minimapIcon = new GameObject("Minimap Icon", typeof(SpriteRenderer));
+        minimapIcon.transform.parent = newMoon.transform;
+        GameObject planetDarkness = new GameObject("Planet Darkness", typeof(SpriteRenderer), typeof(LookAt));
+        planetDarkness.transform.parent = newMoon.transform;
+        GameObject gravityField = new GameObject("Gravity Field", typeof(CircleCollider2D), typeof(PlanetGravity));
+        gravityField.transform.parent = newMoon.transform;
+
+        //set values
+        var sprite = spriteObject.GetComponent<SpriteRenderer>();
+        if (moonInfo.orbitalType == ORBITAL_TYPES.ORBITAL_PLANET)
+        {
+            sprite.sprite = planetSpriteResources[(int)moonInfo.spritePlanetResourceID];
+        }
+        if (moonInfo.orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
+        {
+            sprite.sprite = planetGasGiantsResources[(int)moonInfo.spritePlanetResourceID];
+        }
+        if (moonInfo.orbitalType == ORBITAL_TYPES.ORBITAL_ASTEROID)
+        {
+            sprite.sprite = asteroidResources[(int)moonInfo.spritePlanetResourceID];
+        }
+        if (moonInfo.orbitalType == ORBITAL_TYPES.ORTIBAL_MOON)
+        {
+            sprite.sprite = moonSpriteResources[(int)moonInfo.spritePlanetResourceID];
+        }
+        var gravityFieldScript = gravityField.GetComponent<PlanetGravity>();
+        gravityFieldScript.pullForce = 1; //TODO determine some values based on mass and size usable for everything
+        gravityFieldScript.pullRadius = 1;
+        var systemInfoScript = systemInfo.GetComponent<SystemInfo>();
+        systemInfoScript.starName = systemInfo.GetComponent<Text>(); //TODO determine other hookups here, or for later.
+        systemInfoScript.starName.text = infoBase.systemName;
+
+        //set value for highlight and planet darkness sprites here
+
+        var lookatScript = planetDarkness.GetComponent<LookAt>();
+        lookatScript.target = parentObject.transform;
+
+        newMoon.transform.localScale = new Vector3(moonInfo.planetUnityScale, moonInfo.planetUnityScale, moonInfo.planetUnityScale);
+        //set distance base values and orbitable script
+        var orbitSet = newMoon.GetComponent<Orbitable>();
+        orbitSet.speed = moonInfo.orbitSpeed;
+        orbitSet.star = parentObject;
+        orbitSet.size = moonInfo.orbitSize;
+        orbitSet.offset = moonInfo.orbitOffset;
+        orbitSet.angle = moonInfo.orbitAngle;
+        orbitSet.clockWise = moonInfo.rotatesClockwise;
+        orbitSet.drawGizmo = true;
+
+
+        Debug.Log("done makin da moon");
+
+        return newMoon;
     }
 }

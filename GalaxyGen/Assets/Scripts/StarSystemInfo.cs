@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class StarSystemInfo : MonoBehaviour
+public class StarSystemInfo
 {
     public string systemName;
     public int generatedSystemSeed;
@@ -51,10 +51,10 @@ public class StarSystemInfo : MonoBehaviour
 
     public void AddOrbitalObject(OrbitableInfo inObject)
     {
-        Debug.Log("testing orbital object " + inObject.planetName + " " + inObject.GetInstanceID());
+        Debug.Log("testing orbital object " + inObject.orbitalName + " " + inObject.GetInstanceID());
         //if (!orbitals.Contains(inObject))
         {
-            Debug.Log("adding new orbital object" + inObject.planetName);
+            Debug.Log("adding new orbital object" + inObject.orbitalName);
             orbitals.Add(inObject);
         }
     }
