@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OrbitableInfo : MonoBehaviour
+public class OrbitableInfo
 {
     public string orbitalName;
     public int orbitalID = -1; //number from gen, sequential
@@ -22,7 +22,7 @@ public class OrbitableInfo : MonoBehaviour
     public Vector2 orbitSize;
     public float orbitAngle;
     public float orbitSpeed;
-    public float orbitStart;
+    public int orbitStart;
     public bool rotatesClockwise;
 
     public int numMoons;

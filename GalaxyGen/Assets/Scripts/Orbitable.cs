@@ -15,7 +15,7 @@ public class Orbitable : MonoBehaviour
     public int res = 200;
     public bool clockWise = false;
     [Header("Planet Parameters")]
-    public int startPoint = 0;
+    public int startPoint = 0; //may also cause weirdness with gen, because you need to know acceptable start ranges when you gen.
     public float speed = 1;
 
     [HideInInspector]

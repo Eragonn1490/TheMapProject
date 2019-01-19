@@ -141,6 +141,7 @@ Transform:
   m_Children:
   - {fileID: 425997803}
   - {fileID: 1324168866}
+  - {fileID: 325119704}
   - {fileID: 363814378}
   - {fileID: 257574906}
   m_Father: {fileID: 1054936471}
@@ -432,7 +433,7 @@ Transform:
   m_Children:
   - {fileID: 949860171}
   m_Father: {fileID: 5801672}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &289845926
 GameObject:
@@ -627,7 +628,7 @@ GameObject:
   - component: {fileID: 325119706}
   - component: {fileID: 325119705}
   m_Layer: 0
-  m_Name: Planet_Hotzone_Regular (1)
+  m_Name: Moon Test
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -641,16 +642,16 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 325119703}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 13.055351, y: 3.9801722, z: 0}
-  m_LocalScale: {x: 0.08, y: 0.08, z: 0.08}
+  m_LocalPosition: {x: 29, y: 0, z: 0}
+  m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
   m_Children:
   - {fileID: 901430558}
   - {fileID: 906195405}
   - {fileID: 1610834051}
   - {fileID: 1273056648}
   - {fileID: 157462968}
-  m_Father: {fileID: 363814378}
-  m_RootOrder: 1
+  m_Father: {fileID: 5801672}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &325119705
 MonoBehaviour:
@@ -943,13 +944,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 363814377}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 28.37, y: 0, z: 0}
+  m_LocalPosition: {x: 25, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1938833483}
-  - {fileID: 325119704}
   m_Father: {fileID: 5801672}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &363814379
 MonoBehaviour:
@@ -1624,7 +1624,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 02d83d7374914694dbeba2dd72aa0d9a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d5bb1e60ae358714792b9439c289f774, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -2004,7 +2004,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   FORCESYSTEMTYPE: 1
-  FORCETYPE: 11
+  FORCETYPE: 6
   diameterBaseOfDefaultMiles: 865000
   baseSpeedDefaultEarthMPH: 66615
   orbitalVelocityModifier: 0.0002
@@ -2080,11 +2080,11 @@ MonoBehaviour:
   asteroidResources:
   - {fileID: 21300000, guid: f8a5d148514596e4f89272bc2127f7a8, type: 3}
   - {fileID: 21300000, guid: 068cd72293f938e489e868b4f77eb84b, type: 3}
-  AUtoSystemScale: 100
+  AUtoSystemScale: 35
   objectSizeToPlayScale: 1
   basePlanetScale: 0.08
   baseGasGiantScale: 0.23
-  minimumAUPlanetDistance: 8
+  minimumAUPlanetDistance: 0.18
   smallSystem:
     planetsMin: 1
     planetsMax: 4
@@ -2108,7 +2108,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1114333268}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -41.701027, y: -13.082905, z: -0.46875}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -2235,7 +2235,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1324168865}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 40.265617, y: 13.776476, z: 0}
+  m_LocalPosition: {x: 39.85, y: 13.776476, z: 0}
   m_LocalScale: {x: 0.08, y: 0.08, z: 0.08}
   m_Children:
   - {fileID: 1552405331}
@@ -2972,7 +2972,7 @@ Transform:
   m_GameObject: {fileID: 1938833482}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.23, y: 0.23, z: 0.23}
+  m_LocalScale: {x: 0.08, y: 0.08, z: 0.08}
   m_Children: []
   m_Father: {fileID: 363814378}
   m_RootOrder: 0

@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+
 
 public class Generation_Solar_System : MonoBehaviour
 {
@@ -56,8 +58,8 @@ public class Generation_Solar_System : MonoBehaviour
     //Mercury is .39 AU away in hot zone, assume hot zone start at least .2 AU away and hot zone goes to .75 AU
     //max cold distance at 50 AU, pluto is 40 au away
     float habitationConstant = 5500f; //temperature of earth sun in Kelvin
-    float habModifierStartAU = .75f;
-    float coldModifierStartAU = 2.0f;
+    float habModifierStartAU = .85f; //increased slightly, original 75
+    float coldModifierStartAU = 2.5f; //also increased slightly, original 2.0
     float coldModifierEndAU = 15f; //shrunk a bit to squish stuff together, original 50
 
     public float blackHoleChance;
@@ -95,12 +97,19 @@ public class Generation_Solar_System : MonoBehaviour
     public float objectSizeToPlayScale = 1.0f; //
     public float basePlanetScale = .08f; //base scale for regular planets
     public float baseGasGiantScale = .23f; //base scale for gas giants
-    public float minimumAUPlanetDistance = 8f; //minimum distance planets need to be apart in distance. 
+    public float minimumAUPlanetDistance = .42f; //minimum distance planets need to be apart in AU distance. reminder: take into account system scaling.
 
-    public struct Star_Region_Range
+    public class Star_Region_Range
     {
         public float rangeMinAU;
         public float rangeMaxAU;
+
+        public Star_Region_Range(float minRangeSet, float maxRangeSet)
+        {
+            rangeMinAU = minRangeSet;
+            rangeMaxAU = maxRangeSet;
+        }
+
     }
 
     [System.Serializable]
@@ -178,20 +187,27 @@ public class Generation_Solar_System : MonoBehaviour
 
 
         //modify star size or temperature here for variance
-        starUnitySize += (Random.Range(-starUnitySize / 10f, starUnitySize / 10f));
+        starUnitySize += (Random.Range(-starUnitySize / 10f, starUnitySize / 10f)); //current assets sprite size = you need to be about 25 dist away at 1.0 scale
+        Debug.Log("star unity size is " + starUnitySize);
+        float starMinDistCalc = (starUnitySize + starUnitySize/2f )* 25f; //*  //one half of star size for corona
+        //account for distance scale of system
+        starMinDistCalc /= starDistanceMod; //for .2, dist will be say, 50 / .2 = 250
         starTemperature += (Random.Range(-starTemperature / 10f, starTemperature / 10f));
         float starDiameter = starUnitySize * diameterBaseOfDefaultMiles; //based on diameter of Sol
-        float mandatoryMinAU = .15f; //brown dwarf sanity
-        float minRangeAU = starUnitySize + starUnitySize / 3f; //* AUtoSystemScale + starUnitySize / 10f; //one third of star size for corona
+        float mandatoryMinAU = .25f; //brown dwarf sanity
+        float minRangeAU = starMinDistCalc;
+        Debug.Log("min range unity size is " + minRangeAU);
+        minRangeAU /= AUtoSystemScale;
+        Debug.Log("min range AU scale is " + minRangeAU);
         if (minRangeAU < mandatoryMinAU)
         {
             minRangeAU = mandatoryMinAU;
         }
 
-        Star_Region_Range hotRange;
-        Star_Region_Range habRange;
-        Star_Region_Range coldRange;
-        Star_Region_Range asteroidRange;
+        Star_Region_Range hotRange = new Star_Region_Range(0,0);
+        Star_Region_Range habRange = new Star_Region_Range(0, 0); ;
+        Star_Region_Range coldRange = new Star_Region_Range(0, 0); ;
+        Star_Region_Range asteroidRange = new Star_Region_Range(0, 0); ;
 
         float minDistHot = .5f; //brown dwarf sanity
         float minDistHab = .65f;
@@ -214,8 +230,8 @@ public class Generation_Solar_System : MonoBehaviour
         {
             coldRange.rangeMaxAU = coldRange.rangeMinAU + minDistCold;
         }
-        //asteroid range between hab and cold, so far 1/6 of hab to maybe close 1/12 of cold, remember cold range is huge
-        asteroidRange.rangeMinAU = habRange.rangeMaxAU - Random.Range(0, (habRange.rangeMaxAU - habRange.rangeMinAU) / 6f);
+        //asteroid range between hab and cold, so far 1/8 of hab to maybe close 1/12 of cold, remember cold range is huge
+        asteroidRange.rangeMinAU = habRange.rangeMaxAU - Random.Range(0, (habRange.rangeMaxAU - habRange.rangeMinAU) / 8f);
         asteroidRange.rangeMaxAU = coldRange.rangeMinAU + Random.Range(0, (coldRange.rangeMaxAU - coldRange.rangeMaxAU) / 12f);
         bool hasAsteroidBelt = true; //set randomly
 
@@ -225,9 +241,11 @@ public class Generation_Solar_System : MonoBehaviour
 
 
         //generate star system info for celestial object
-        starSystemInfo.SetCelestialBodyInfo(star, size, type,  starUnitySize, starDiameter, starDensity, starTemperature, hasAsteroidBelt);
+        float systemBaseAngle = Random.Range(0, 360f);
+        starSystemInfo.SetCelestialBodyInfo(star, size, type,  starUnitySize, starDiameter, starDensity, starTemperature, hasAsteroidBelt, systemBaseAngle);
         starSystemInfo.SetRegionRangeValues(hotRange, habRange, coldRange, asteroidRange);
         starSystemInfo.SetDistanceScale(starDistanceMod); //huge stars need stuff closer while tiny stars need to push stuff further out
+
 
         //roll planets count depending on system size.
         int numPlanets = 0;
@@ -292,10 +310,18 @@ public class Generation_Solar_System : MonoBehaviour
         for (int i = 0; i < numPlanets; i++)
         {
             Debug.Log("generating planet " + i);
-            OrbitableInfo genPlanet = GeneratePlanet(ref orbitalsGenerated, starSystemInfo.systemDistanceScaleMod, hotRange, habRange, coldRange, asteroidRange, true, starSystemInfo.generatedSystemSeed, i);
-            genPlanet.orbitalName = genPlanet.orbitalType.ToString() + " " + i + " " + genPlanet.orbitalRange.ToString() + " "; //name later based on distances from central object and star system name
-            starSystemInfo.AddOrbitalObject(genPlanet);
-            if ( i > 75)
+            OrbitableInfo genPlanet = GeneratePlanet(ref orbitalsGenerated, starSystemInfo.systemDistanceScaleMod, hotRange, habRange, coldRange, asteroidRange, true, starSystemInfo.generatedSystemSeed, i, starSystemInfo.baseSystemAngle);
+            if (genPlanet != null)
+            {
+                genPlanet.orbitalName = genPlanet.orbitalType.ToString() + " " + i + " " + genPlanet.orbitalRange.ToString() + " "; //name later based on distances from central object and star system name
+                starSystemInfo.AddOrbitalObject(genPlanet);
+            }
+            else
+            {
+                Debug.Log("<b><color=red>NO PLANET GENNED</color></b>");
+            }
+            
+            if ( i > 75) //hard limit for now
             {
                 break;
             }
@@ -308,9 +334,24 @@ public class Generation_Solar_System : MonoBehaviour
 
     }
 
-    
+    bool CheckPointWithinRegion(float AUpoint, Star_Region_Range testRegion)
+    {
+        if (AUpoint >= testRegion.rangeMinAU && AUpoint <= testRegion.rangeMaxAU)
+        {
+            return true;
+        }
+        return false;
+    }
 
-    OrbitableInfo GeneratePlanet(ref List<OrbitableInfo> preGenned, float systemScale, Star_Region_Range hotRange, Star_Region_Range habRange, Star_Region_Range coldRange, Star_Region_Range asteroidRange, bool hasAsteroidBelt, int baseSeed, int planetNum) //generate planet information: type of planet, size of planet, planet coloration (which sprite to use), gravity, etc. 
+    float GetExclusionSpawnAU(ref List<OrbitableInfo> preGenned, float systemScale, Star_Region_Range hotRange, Star_Region_Range habRange, Star_Region_Range coldRange, Star_Region_Range asteroidRange, bool hasAsteroidBelt, int baseSeed, int planetNum)
+    {
+        float AUSpawn = 0.0f;
+
+        return AUSpawn;
+    }
+
+
+    OrbitableInfo GeneratePlanet(ref List<OrbitableInfo> preGenned, float systemScale, Star_Region_Range hotRange, Star_Region_Range habRange, Star_Region_Range coldRange, Star_Region_Range asteroidRange, bool hasAsteroidBelt, int baseSeed, int planetNum, float baseAngle) //generate planet information: type of planet, size of planet, planet coloration (which sprite to use), gravity, etc. 
     {
         //determine orbital object type
         float modifiedAsteroidChance = baseAsteroidChance;
@@ -338,7 +379,7 @@ public class Generation_Solar_System : MonoBehaviour
         {
             orbitalType = ORBITAL_TYPES.ORBITAL_ASTEROID;
         }
-
+        
         //place chances depending on type. TODO: editable baselines.
         float chanceHot = 15f;
         float chanceHab = 30f;
@@ -383,6 +424,8 @@ public class Generation_Solar_System : MonoBehaviour
             //Debug.Log("hab range is now " + habRange.rangeMinAU + " to " + habRange.rangeMaxAU);
             //Debug.Log("cold range is now " + coldRange.rangeMinAU + " to " + coldRange.rangeMaxAU);
         }
+        float AUDistance = 0.0f;
+        //set the target range
         Star_Region_Range targetRange = hotRange;
         if (rangePlacement == SYSTEM_REGION_RANGES.REGION_HAB)
         {
@@ -403,15 +446,262 @@ public class Generation_Solar_System : MonoBehaviour
         {
             //Debug.Log("target range is in hot range");
         }
-
-
-        List<float> competingRanges = new List<float>(); //list of already existing planet ranges for comparison. idea is to make a set of ranges for any spawnable location, check if it can spawn there at all, move to the next, etc, and cancel out if everything is filled.
-        for (int i = 0; i < preGenned.Count; i++)
+        if (orbitalType != ORBITAL_TYPES.ORBITAL_ASTEROID)
         {
-            competingRanges.Add(preGenned[i].distanceFromCenterAU);
+            //create exclusion zones from previously generated planets from list
+            //order list first
+            OrbitableInfo[] orderedList = preGenned.OrderBy(x => x.distanceFromCenterAU).ToArray(); //since we dont know the distance order at any given time we need to get it every time
+
+
+            List<Star_Region_Range> exclusionRanges = new List<Star_Region_Range>();
+            for (int i = 0; i < orderedList.Length; i++)
+            {
+                Star_Region_Range excludedRange = new Star_Region_Range(0, 0);
+                //exclude range at planet AU size. add more if it has moons and/or is a gas giant.
+                float excludeAUposition = orderedList[i].distanceFromCenterAU;
+                float addMod = 0.0f;
+                if (orderedList[i].orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
+                {
+                    addMod += minimumAUPlanetDistance / .2f;
+                }
+                if (preGenned[i].numMoons > 0)
+                {
+                    addMod += minimumAUPlanetDistance / .1f;
+                }
+
+                excludedRange.rangeMinAU = excludeAUposition - ((addMod + minimumAUPlanetDistance) / systemScale);
+                excludedRange.rangeMaxAU = excludeAUposition + ((addMod + minimumAUPlanetDistance) / systemScale);
+
+                exclusionRanges.Add(excludedRange);
+            }
+            
+            //trim out exclusion ranges that dont matter
+            List<Star_Region_Range> removalExcess = new List<Star_Region_Range>();
+            for (int i = 0; i < exclusionRanges.Count; i++)
+            {
+                if ((targetRange.rangeMinAU > exclusionRanges[i].rangeMaxAU) ||
+                    (targetRange.rangeMaxAU < exclusionRanges[i].rangeMinAU))
+                {
+                    removalExcess.Add(exclusionRanges[i]);
+                }
+            }
+            for (int i = 0; i < removalExcess.Count; i++)
+            {
+                exclusionRanges.Remove(removalExcess[i]);
+            }
+            removalExcess.Clear();
+
+
+            //exclusions ranges are in order, now to create trim values.
+            List<Star_Region_Range> fullRanges = new List<Star_Region_Range>();
+            List<Star_Region_Range> removalRanges = new List<Star_Region_Range>();
+            List<Star_Region_Range> addRanges = new List<Star_Region_Range>();
+            Star_Region_Range fullRangeBase = new Star_Region_Range(hotRange.rangeMinAU, coldRange.rangeMaxAU);
+            fullRanges.Add(fullRangeBase);
+            Debug.Log("base range is " + fullRangeBase.rangeMinAU + " to " + fullRangeBase.rangeMaxAU);
+            Debug.Log("target range is " + targetRange.rangeMinAU + " to " + targetRange.rangeMaxAU);
+
+            //exclusion 5 cases:
+            //not near, ignore
+            //left side in, trim
+            //right side in, trim
+            //fully within exclusion zone: remove this range
+            //enveloping exclusion zone completely: split chunk
+
+            for (int i = 0; i < exclusionRanges.Count; i++) //for each exclusion range we need to carve out a chunk of the acceptable spawning range
+            {
+                //Debug.Log("doing exclusion range " + i + " which is excluding " + exclusionRanges[i].rangeMinAU + " to " + exclusionRanges[i].rangeMaxAU);
+                for (int j = 0; j < fullRanges.Count; j++)
+                {
+                    //Debug.Log("checking range " + j + " which has " + fullRanges[j].rangeMinAU + " to " + fullRanges[j].rangeMaxAU);
+                    //first, the no-ops
+                    if ((exclusionRanges[i].rangeMaxAU < fullRanges[j].rangeMinAU) ||
+                        (exclusionRanges[i].rangeMinAU > fullRanges[j].rangeMaxAU))
+                    {
+                        //Debug.Log("not within range at all");
+                        continue;
+                    }
+                    else if (exclusionRanges[i].rangeMinAU < fullRanges[j].rangeMinAU && exclusionRanges[i].rangeMaxAU > fullRanges[j].rangeMaxAU) //the rare case: completely envelops, A < C && B > D
+                    {
+                        //Debug.Log("rare case");
+                        //remove this segment from further consideration. cant actually remove it inside the op though
+                        fullRanges[j].rangeMinAU = 0.0f; fullRanges[j].rangeMaxAU = 0.0f;
+                        removalRanges.Add(fullRanges[j]);
+
+                    }
+                    else if (exclusionRanges[i].rangeMinAU > fullRanges[j].rangeMinAU && exclusionRanges[i].rangeMaxAU > fullRanges[j].rangeMaxAU) //carve out a chunk instead of splitting: A > C && B > D
+                    {
+                        float minRange = fullRanges[j].rangeMinAU;
+                        float maxRange = exclusionRanges[i].rangeMinAU;
+                        fullRanges[j].rangeMinAU = minRange; fullRanges[j].rangeMaxAU = maxRange;
+                    }
+                    else if (exclusionRanges[i].rangeMinAU < fullRanges[j].rangeMinAU && exclusionRanges[i].rangeMaxAU < fullRanges[j].rangeMaxAU) //carve out a chunk instead of splitting: A < C && B < D
+                    {
+                        float minRange = exclusionRanges[i].rangeMaxAU;
+                        float maxRange = fullRanges[j].rangeMaxAU;
+                        fullRanges[j].rangeMinAU = minRange; fullRanges[j].rangeMaxAU = maxRange;
+                    }
+                    else //need to split a new range out between these values. this should only ever be fully inside a single range, A > C && B < D
+                    {
+
+                        float splitMinRange = exclusionRanges[i].rangeMaxAU;
+                        float splitMaxRange = fullRanges[j].rangeMaxAU;
+                        float newMin = fullRanges[j].rangeMinAU;
+                        float newMax = exclusionRanges[i].rangeMinAU;
+                        //Debug.Log("split new chunk, " + splitMinRange + " to " + splitMaxRange + " and " + newMin + " to " + newMax);
+                        fullRanges[j].rangeMinAU = newMin; fullRanges[j].rangeMaxAU = newMax;
+                        addRanges.Add(new Star_Region_Range(splitMinRange, splitMaxRange));
+
+                    }
+                }
+                //housekeeping
+                if (addRanges.Count > 0)
+                {
+                    for (int ar = 0; ar < addRanges.Count; ar++)
+                    {
+                        fullRanges.Add(addRanges[ar]);
+                    }
+                }
+                if (removalRanges.Count > 0)
+                {
+                    for (int r = 0; r < removalRanges.Count; r++)
+                    {
+                        fullRanges.Remove(removalRanges[r]);
+                    }
+                }
+                addRanges.Clear();
+                removalRanges.Clear();
+            }
+            //then, we need to squish for our random stuff. remember, they are in order. we need to determine max and min within (and if its even possible to gen in that space), then squish values for one continous random, then balloon back out to proper range.
+            float minSpawnable = targetRange.rangeMinAU;
+            float maxSpawnable = targetRange.rangeMaxAU;
+            bool foundMin = false;
+            int minIndex = 0;
+            bool foundMax = false;
+            //Debug.Log("original spawn range is " + targetRange.rangeMinAU + " to " + targetRange.rangeMaxAU);
+            //for (int i = 0; i < fullRanges.Count; i++)
+            //{
+            //    Debug.Log("range possible at " + i + " is " + fullRanges[i].rangeMinAU + " to " + fullRanges[i].rangeMaxAU);
+            //}
+            for (int i = 0; i < fullRanges.Count; i++)
+            {
+                if (!foundMin)
+                {
+                    //Debug.Log("testing min" + minSpawnable  + " within " + fullRanges[i].rangeMinAU + " to " + fullRanges[i].rangeMaxAU);
+                    if (CheckPointWithinRegion(minSpawnable, fullRanges[i]))
+                    {
+                        //Debug.Log("within min at " + i + " which has min of " + fullRanges[i].rangeMinAU);
+                        foundMin = true; //acceptable range, dont need to modify
+                        minIndex = i;
+                    }
+                    else
+                    {
+                        //Debug.Log("not found!");
+                        if (minSpawnable < fullRanges[i].rangeMinAU && fullRanges[i].rangeMinAU < targetRange.rangeMaxAU)
+                        {
+                            
+                            foundMin = true;
+                            minSpawnable = fullRanges[i].rangeMinAU;
+                            //Debug.Log("setting min here! min is now " + minSpawnable);
+                            minIndex = i;
+                        }
+                    }
+                }
+                if (!foundMax)
+                {
+                    if (CheckPointWithinRegion(targetRange.rangeMaxAU, fullRanges[i]))
+                    {
+                        //Debug.Log("max trigger 1");
+                        foundMax = true; //also in acceptable range
+                        maxSpawnable = targetRange.rangeMaxAU; // set it back to normal
+                        fullRanges[i].rangeMaxAU = maxSpawnable;
+                    }
+                    else //move up till we cant anymore, if we never set it back then by default we are done.
+                    {
+                        Debug.Log("max trigger 2: point of " + targetRange.rangeMaxAU + " not within " + fullRanges[i].rangeMinAU + " to " + fullRanges[i].rangeMaxAU);
+                        if (foundMin)
+                        {
+                            if (targetRange.rangeMaxAU > fullRanges[i].rangeMinAU)
+                            {
+                                maxSpawnable = fullRanges[i].rangeMaxAU;
+                                //Debug.Log("max trigger 2.5: target set to " + fullRanges[i].rangeMaxAU);
+                                foundMax = true;
+                            }
+
+                        }
+                    }
+                }
+            }
+            //Debug.Log("now over here");
+            if (!foundMin) //no acceptable spawn location in this range!
+            {
+                //Debug.Log("no min found!");
+                return null; //for now, generate no planet. could potentially generate it in another zone instead.
+            }
+            if (!foundMax)
+            {
+                //Debug.Log("no max found!");
+                return null;
+            }
+            Debug.Log("max is set to " + maxSpawnable);
+            //pack together potential spawning regions
+            List<Star_Region_Range> spawnableRanges = new List<Star_Region_Range>();
+            spawnableRanges.Add(new Star_Region_Range(minSpawnable, fullRanges[minIndex].rangeMaxAU));
+            for (int i = minIndex + 1; i < fullRanges.Count; i++)
+            {
+                if (CheckPointWithinRegion(maxSpawnable, fullRanges[i])) //done adding ranges, we found the end point
+                {
+                    spawnableRanges.Add(new Star_Region_Range(fullRanges[i].rangeMinAU, maxSpawnable));
+                    break;
+                }
+
+            }
+
+            if (spawnableRanges.Count < 0)
+            {
+                //Debug.Log("somehow, no spawnable ranges found!"); //just in case
+                return null;
+            }
+            float baseRange = maxSpawnable - minSpawnable;
+            //Debug.Log("base range is " + baseRange);
+            float packedValue = 0.0f;
+            for (int i = 0; i < spawnableRanges.Count; i++)
+            {
+                //Debug.Log("packed value from " + packedValue + " and the range is at " + spawnableRanges[i].rangeMinAU + " to " + spawnableRanges[i].rangeMaxAU);
+                packedValue += (spawnableRanges[i].rangeMaxAU - spawnableRanges[i].rangeMinAU);
+            }
+
+            //Debug.Log("packed value is " + packedValue);
+            //determine actual rolled distance within packed value
+            AUDistance = Random.Range(0.0f, packedValue);
+            //blow back up result
+            for (int i = 0; i < spawnableRanges.Count; i++)
+            {
+                if (AUDistance < spawnableRanges[i].rangeMaxAU - spawnableRanges[i].rangeMinAU) //within this region
+                {
+                    AUDistance = spawnableRanges[i].rangeMinAU + AUDistance;
+                    break;
+                }
+                else //subtract portion and continue
+                {
+                    AUDistance -= (spawnableRanges[i].rangeMaxAU - spawnableRanges[i].rangeMinAU);
+                }
+            }
         }
-        //determine actual distance from center object.
-        float AUDistance = Random.Range(targetRange.rangeMinAU, targetRange.rangeMaxAU);
+        else //place asteroid without caring about exclusion ranges
+        {
+            AUDistance = Random.Range(targetRange.rangeMinAU, targetRange.rangeMaxAU);
+        }
+        
+
+        
+
+        
+
+
+
+
+
         //TODO: determine if inside anothers orbit. Alternatively: make blocking ranges and piecemeal them together before generating range.
         //Debug.Log("set AU distance to " + AUDistance);
 
@@ -438,16 +728,50 @@ public class Generation_Solar_System : MonoBehaviour
         planetInfo.distanceFromCenterAU = AUDistance;
         planetInfo.distanceFromCenterUnityScale = unityDistance;
         planetInfo.planetUnityScale = modifiedSizeScale;
-
-        planetInfo.orbitSize = new Vector2(planetInfo.distanceFromCenterUnityScale, planetInfo.distanceFromCenterUnityScale * Random.Range(.85f, 1.20f));
+        Debug.Log("final AU distance is " + AUDistance);
+        Debug.Log("final unity distance is " + planetInfo.distanceFromCenterUnityScale);
+        float baseSizeMod = .04f;
+        float baseAngleMod = 1.0f;
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_HAB)
+        {
+            baseAngleMod = 1.5f;
+            baseSizeMod = .05f;
+        }
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_ASTEROID)
+        {
+            baseAngleMod = .05f;
+            baseSizeMod = .02f;
+        }
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_COLD)
+        {
+            baseAngleMod = 3.0f;
+            baseSizeMod = .07f;
+        }
+        Debug.Log("base size mod is " + baseSizeMod);
+        Debug.Log("sizescale is " + planetInfo.distanceFromCenterUnityScale);
+        float sizeX = planetInfo.distanceFromCenterUnityScale;
+        float randMod = Random.Range(.85f, .85f + baseSizeMod);
+        Debug.Log("rand mod is " + randMod);
+        float sizeY = randMod * planetInfo.distanceFromCenterUnityScale;
+        planetInfo.orbitSize = new Vector2(sizeX, sizeY);
+        Debug.Log("actual orbit size is " + planetInfo.orbitSize);
         planetInfo.orbitOffset = new Vector2(Random.Range(AUtoSystemScale / 80f * -1f, AUtoSystemScale / 80f), Random.Range((AUtoSystemScale / 80f) * -1f, AUtoSystemScale / 80f));
-        planetInfo.orbitAngle = Random.Range(0.0f, 360f); //should this be weighted to a set value? see solar system model. maybe just need to randomly have a weird one. possibly same with orbit size.
+        
+        
+        planetInfo.orbitAngle = baseAngle + Random.Range(-baseAngleMod, baseAngleMod); //along system angle for less collisions on elliptical orbits
+        planetInfo.orbitStart = Random.Range(0, 50);
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_COLD)
+        {
+            if (Random.Range(0, 1.0f) > .92f)
+            {
+                planetInfo.orbitAngle += Random.Range(10, 15f); //random awkward orbit possible in cold regions
+            }
+        }
 
 
         //public float orbitalVelocityModifier = .0002f; //66615 * .0002 = ~20f, etc.  Modify mph to get acceptable speed.
         //public float diameterBaseOfDefaultMiles = 865000; //base diameter of sun
         //public float baseSpeedDefaultEarthMPH = 66615; //base speed at 1 AU, cheat value for determinism of speed.
-        //public float orbitalVelocityModifier = .0002f; //66615 * .0002 = ~20f, etc.  Modify mph to get acceptable speed.
         //relative velocities to earth
         //Velocity = 1/R^(1/2) (1 divided by sqrt of AU)
         //earth at 92.96 million miles, 1AU
@@ -488,9 +812,8 @@ public class Generation_Solar_System : MonoBehaviour
         }
 
         GeneratePlanetsMoons(ref planetInfo, baseSeed);
-        Debug.Log("planet has " + planetInfo.numMoons);
-        preGenned.Add(planetInfo);
 
+        preGenned.Add(planetInfo);
         return planetInfo;
     }
 
@@ -577,17 +900,20 @@ public class Generation_Solar_System : MonoBehaviour
             //moon distance gen: moon from earth is about 0.00257 AU, at 238,856 miles.  Callisto from jupiter is 1,170,042 miles at ~.0126 au, Pasiphae is 14,602,223 at .157 AU. lets set range from .00225 AU to .175 AU
             //will probably need to set some factors, like if its around a gas giant, or if its another planet, etc.
             //need to change actual values due to unity scaling issues
-            float moonMinRangeAU = .0115f;
-            float moonMaxRangeAU = .05f;
+            float distMinUnityScaleMoon = 4f; // at least 4 unity units away from a normal planet
+            //float distMinUnityScaleGG = 7f; //at least 7 unity units away from a gas giant
+
+            float moonMinRangeAU = distMinUnityScaleMoon / AUtoSystemScale;
+            float moonMaxRangeAU = moonMinRangeAU * 2.0f;
             if (planetInfo.orbitalType == ORBITAL_TYPES.ORBITAL_GAS_GIANT)
             {
-                moonMinRangeAU = .0925f; //need to offset because gas giants are bigger
-                moonMaxRangeAU = .155f;
+                moonMinRangeAU = moonMinRangeAU * 1.45f; //need to offset because gas giants are bigger
+                moonMaxRangeAU = moonMaxRangeAU * 1.15f;
             }
             if (newMoon.orbitalType == ORBITAL_TYPES.ORBITAL_PLANET)
             {
-                moonMinRangeAU *= 1.25f;
-                moonMaxRangeAU *= 1.25f;
+                moonMinRangeAU *= 1.35f;
+                moonMaxRangeAU *= 1.15f;
             }
             float moonDistRangeAU = Random.Range(moonMinRangeAU, moonMaxRangeAU);
             float moonDistUnityScale = moonDistRangeAU * AUtoSystemScale;
@@ -617,7 +943,7 @@ public class Generation_Solar_System : MonoBehaviour
                 orbitPeriod = maxOrbitalSpeed;
             }
             newMoon.orbitSpeed = orbitPeriod; //may need to tweak moon speed differently
-            newMoon.orbitStart = Random.Range(0, 360f);
+            newMoon.orbitStart = Random.Range(0, 50);
             newMoon.rotatesClockwise = Random.Range(0, 1.0f) < .5f ? true : false;
             newMoon.numMoons = 0;
             newMoon.moons = null;
@@ -644,11 +970,11 @@ public class Generation_Solar_System : MonoBehaviour
         centralObject.transform.parent = systemContainer.transform;
         for (int i = 0; i < infoBase.orbitals.Count; i++)
         {
-            Debug.Log("generating orbitals count for " + i + " of " + infoBase.orbitals.Count);
+            Debug.Log("generating orbitals count for " + (i+1) + " of " + infoBase.orbitals.Count );
             GameObject newPlanet = GeneratePlanetGameobject(infoBase.orbitals[i], infoBase, systemContainer.gameObject);
             for (int m = 0; m < infoBase.orbitals[i].numMoons; m++)
             {
-                Debug.Log("Genning moon " + m);
+                Debug.Log("Genning moon " + (m+1));
                 GameObject newMoon = GenerateMoonGameobject(infoBase.orbitals[i].moons[m], newPlanet, infoBase);
             }
         }
@@ -684,13 +1010,13 @@ public class Generation_Solar_System : MonoBehaviour
         GameObject centralObject = new GameObject(infoBase.systemName, typeof(CapsuleCollider2D));
         
         GameObject spriteObject = new GameObject("Sprite", typeof(SpriteRenderer));
-        spriteObject.transform.parent = centralObject.transform;
+        spriteObject.transform.SetParent(centralObject.transform, false);
         GameObject systemInfo = new GameObject("System Info", typeof(CanvasRenderer), typeof(Text), typeof(SystemInfo));
-        systemInfo.transform.parent = centralObject.transform;
+        systemInfo.transform.SetParent(centralObject.transform, false);
         GameObject minimapIcon = new GameObject("Minimap Icon", typeof(SpriteRenderer));
-        minimapIcon.transform.parent = centralObject.transform;
+        minimapIcon.transform.SetParent(centralObject.transform, false);
         GameObject gravityField = new GameObject("Gravity Field", typeof(CircleCollider2D), typeof(PlanetGravity));
-        gravityField.transform.parent = centralObject.transform;
+        gravityField.transform.SetParent(centralObject.transform, false);
 
         //set values
         var sprite = spriteObject.GetComponent<SpriteRenderer>();
@@ -713,20 +1039,20 @@ public class Generation_Solar_System : MonoBehaviour
         Debug.Log("generating system planet object");
         GameObject newPlanet = new GameObject(planetInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
         newPlanet.transform.parent = centerObject.transform;
-        var orbitCopy = newPlanet.AddComponent<OrbitableInfo>();
-        orbitCopy.SetCopyFrom(planetInfo);
+        //var orbitCopy = newPlanet.AddComponent<OrbitableInfo>();
+        //orbitCopy.SetCopyFrom(planetInfo);
         GameObject spriteObject = new GameObject("Sprite", typeof(SpriteRenderer));
-        spriteObject.transform.parent = newPlanet.transform;
+        spriteObject.transform.SetParent(newPlanet.transform, false);
         GameObject planetHighlight = new GameObject("Planet Highlight", typeof(SpriteRenderer));
         planetHighlight.transform.parent = newPlanet.transform; //TODO set up base sprite for highlighter
         GameObject systemInfo = new GameObject("System Info", typeof(CanvasRenderer), typeof(Text), typeof(SystemInfo));
-        systemInfo.transform.parent = newPlanet.transform;
+        systemInfo.transform.SetParent(newPlanet.transform, false);
         GameObject minimapIcon = new GameObject("Minimap Icon", typeof(SpriteRenderer));
-        minimapIcon.transform.parent = newPlanet.transform;
+        minimapIcon.transform.SetParent(newPlanet.transform, false);
         GameObject planetDarkness = new GameObject("Planet Darkness", typeof(SpriteRenderer), typeof(LookAt));
-        planetDarkness.transform.parent = newPlanet.transform;
+        planetDarkness.transform.SetParent(newPlanet.transform, false);
         GameObject gravityField = new GameObject("Gravity Field", typeof(CircleCollider2D), typeof(PlanetGravity));
-        gravityField.transform.parent = newPlanet.transform;
+        gravityField.transform.SetParent(newPlanet.transform, false);
 
         //set values
         var sprite = spriteObject.GetComponent<SpriteRenderer>();
@@ -768,27 +1094,26 @@ public class Generation_Solar_System : MonoBehaviour
         orbitSet.angle = planetInfo.orbitAngle;
         orbitSet.clockWise = planetInfo.rotatesClockwise;
         orbitSet.drawGizmo = true;
-        Debug.Log("done generating planet");
+        orbitSet.startPoint = planetInfo.orbitStart;
         return newPlanet;
     }
 
     GameObject GenerateMoonGameobject(OrbitableInfo moonInfo, GameObject parentObject, StarSystemInfo infoBase)
     {
-        Debug.Log("<b><color=red>MAKIN DA MOON</color></b>"); 
         GameObject newMoon = new GameObject(moonInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
         newMoon.transform.parent = parentObject.transform;
-        var orbitCopy = newMoon.AddComponent<OrbitableInfo>();
-        orbitCopy.SetCopyFrom(moonInfo);
+        //var orbitCopy = newMoon.AddComponent<OrbitableInfo>();
+        //orbitCopy.SetCopyFrom(moonInfo);
         GameObject spriteObject = new GameObject("Sprite", typeof(SpriteRenderer));
-        spriteObject.transform.parent = newMoon.transform;
+        spriteObject.transform.SetParent(newMoon.transform, false);
         GameObject planetHighlight = new GameObject("Planet Highlight", typeof(SpriteRenderer));
-        planetHighlight.transform.parent = newMoon.transform; //TODO set up base sprite for highlighter
+        planetHighlight.transform.SetParent(newMoon.transform, false); //TODO set up base sprite for highlighter
         GameObject systemInfo = new GameObject("System Info", typeof(CanvasRenderer), typeof(Text), typeof(SystemInfo));
-        systemInfo.transform.parent = newMoon.transform;
+        systemInfo.transform.SetParent(newMoon.transform, false);
         GameObject minimapIcon = new GameObject("Minimap Icon", typeof(SpriteRenderer));
-        minimapIcon.transform.parent = newMoon.transform;
+        minimapIcon.transform.SetParent(newMoon.transform, false);
         GameObject planetDarkness = new GameObject("Planet Darkness", typeof(SpriteRenderer), typeof(LookAt));
-        planetDarkness.transform.parent = newMoon.transform;
+        planetDarkness.transform.SetParent(newMoon.transform, false);
         GameObject gravityField = new GameObject("Gravity Field", typeof(CircleCollider2D), typeof(PlanetGravity));
         gravityField.transform.parent = newMoon.transform;
 
@@ -834,7 +1159,6 @@ public class Generation_Solar_System : MonoBehaviour
         orbitSet.drawGizmo = true;
 
 
-        Debug.Log("done makin da moon");
 
         return newMoon;
     }
