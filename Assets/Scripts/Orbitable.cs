@@ -15,7 +15,7 @@ public class Orbitable : MonoBehaviour
     public int res = 200;
     public bool clockWise = false;
     [Header("Planet Parameters")]
-    public int startPoint = 0;
+    public int startPoint = 0; //may also cause weirdness with gen, because you need to know acceptable start ranges when you gen.
     public float speed = 1;
 
     [HideInInspector]
@@ -42,13 +42,16 @@ public class Orbitable : MonoBehaviour
 
     private void Update()
     {
+
         if (star == null)
             return;
 
         //Find the point closest to desired distance
         float dist = 0;
-        for (; ; currentPoint++)
+
+        for (; ; currentPoint++) //note: infinite loop here for certain speeds possible, like high values
         {
+            
             dist = Vector2.Distance(trajectory[currentPoint], preOffsetPos);
             if (currentPoint == res) currentPoint = 0;
             if (dist >= speed * Time.deltaTime) break;
@@ -64,6 +67,7 @@ public class Orbitable : MonoBehaviour
 
         //Update position with offset
         transform.position = star.transform.position + (Vector3)preOffsetPos;
+
     }
 
     public void UpdateTrajectory()

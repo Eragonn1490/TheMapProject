@@ -8,6 +8,7 @@ public class PlanetHitDetection : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        /*
         if (GameProps.m_NetPC.photonView.isMine)
         {
             if (m_PlanetName == "")
@@ -22,11 +23,14 @@ public class PlanetHitDetection : MonoBehaviour
             GameProps.m_IsPlanetChosen = true;
             GameProps.m_PlanetName = m_PlanetName;
         }
+        */
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
+        /*
         if (Input.GetKey(KeyCode.F))
             PhotonNetwork.LeaveRoom();
+            */
     }
 }

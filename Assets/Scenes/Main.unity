@@ -15160,7 +15160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   starPrefab: {fileID: 1011759120323110, guid: 603ef97c479e32548ac5180ec32d0381, type: 3}
-  galaxyFile: Galaxies/GalaxyZ
+  galaxyFile: Galaxies/GalaxyX
   createOnStart: 1
   galaxy:
     solarSystems: []
