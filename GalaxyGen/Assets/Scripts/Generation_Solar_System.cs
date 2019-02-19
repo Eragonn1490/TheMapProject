@@ -7,11 +7,15 @@ using UnityEngine.UI;
 
 public class Generation_Solar_System : MonoBehaviour
 {
+    //public static Generation_Solar_System instance;
+
+    public string sysNameGen;
     public bool FORCESYSTEMTYPE;
     public STARTEMPERATURES_TYPES FORCETYPE;
 
-    public enum SYSTEM_SIZE {SMALL, MEDIUM, LARGE, XLARGE };
-    public enum SYSTEM_TYPE {STAR, BLACKHOLE, EMPTY, ASTEROID};
+    
+    //public enum SYSTEM_SIZE {SMALL, MEDIUM, LARGE, XLARGE };
+    //public enum SYSTEM_TYPE {STAR, BLACKHOLE, EMPTY, ASTEROID};
     public enum STARTEMPERATURES_TYPES             {O_BLUE_BIG_10, B_BLUE_MEDIUM_7, A_BLUE_SMALL_2p5, F_BLUE_1p3, F_WHITE_1p2, G_WHITE_1p1, G_YELLOW_1, K_ORANGE_p9, K_RED_p7, M_RED_p4, GIANT_RED_50, GIANT_BLUE_25, DWARF_RED_p2, DWARF_WHITE_p05, DWARF_BROWN_p_02};
     private float[] starSizes = new float[]        {10           , 7              , 2.5f            , 1.3f      , 1.2f       , 1.1f       , 1f        , .9f        , .7f     , .4f     , 50f          , 25f          , .2f         , .05f           , .02f            };
     private float[] starChanceMods = new float[]   {.1f          , .12f           , .25f            , .5f       , .8f        , .9f        , 1f        , 1.4f       , 1.8f    , 2.5f    , .05f         , .02f         , 4.5f         , .05f           , .25f             };
@@ -41,7 +45,7 @@ public class Generation_Solar_System : MonoBehaviour
     //reduced size and temperatures of some things to clamp size within safe float distances
     public float diameterBaseOfDefaultMiles = 865000; //base diameter of sun
     public float baseSpeedDefaultEarthMPH = 66615; //base speed at 1 AU, cheat value for determinism of speed.
-    public float orbitalVelocityModifier = .0002f; //66615 * .0002 = ~20f, etc.  Modify mph to get acceptable speed.
+    public float orbitalVelocityModifier = .00001f; //66615 * .0002 = ~20f, etc.  Modify mph to get acceptable speed.
                                                    //relative velocities to earth
                                                    //Velocity = 1/R^(1/2) (1 divided by sqrt of AU)
                                                    //earth at 92.96 million miles, 1AU
@@ -67,9 +71,10 @@ public class Generation_Solar_System : MonoBehaviour
     public float asteroidChance;
     //default: star chance
 
-    public int xCoord;
-    public int yCoord;
+    public float xCoord;
+    public float yCoord;
     public int universeSeed;
+    public int systemID;
     public bool GENSYSTEM;
     public bool ALSOGENOBJECTS;
     public float systemGenScale = 1.0f; //modification to size on gen for everything, not currently used
@@ -93,12 +98,15 @@ public class Generation_Solar_System : MonoBehaviour
     public Sprite[] planetGasGiantsResources;
     public Sprite[] asteroidResources;
 
+    public GameObject systemLinkObjectPrefab; //whatever warp thing to exit the system there is.
+
     public float AUtoSystemScale = 25f; //convert AU to unity transform units. Modify to get proper size. (original 100 was way too big)
     public float objectSizeToPlayScale = 1.0f; //
     public float basePlanetScale = .08f; //base scale for regular planets
     public float baseGasGiantScale = .23f; //base scale for gas giants
     public float minimumAUPlanetDistance = .42f; //minimum distance planets need to be apart in AU distance. reminder: take into account system scaling.
 
+    [System.Serializable]
     public class Star_Region_Range
     {
         public float rangeMinAU;
@@ -137,8 +145,12 @@ public class Generation_Solar_System : MonoBehaviour
     public float baseAsteroidChance = 25f;
 
     public GameObject systemContainer; //create and assign creations under this
-    StarSystemInfo starSystemInfo;
-    
+    public StarSystemInfo starSystemInfo;
+
+    private void Awake()
+    {
+
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -157,23 +169,170 @@ public class Generation_Solar_System : MonoBehaviour
     }
 
 
-    void GenerateSystem(int xC, int yC, int rS)  
+    public void ClearSystem()
     {
+        //if (systemContainer != null)
+        //{
+        //    DestroyImmediate(systemContainer);
+        //}
+    }
+
+    public void LoadInGenFromSolarSystem(SolarSystem pregenned, SolarSystemData pregennedData, Galaxy refGalaxy)
+    {
+        Debug.Log("attepting load in system");
+
+
+        starSystemInfo = new StarSystemInfo();
+        starSystemInfo.systemDistanceScaleMod = pregenned.systemDistanceScaleMod;
+        starSystemInfo.mainBodyType = pregenned.mainBodyType;
+        starSystemInfo.systemSize = pregenned.systemSize;
+        starSystemInfo.systemType = pregenned.systemType;
+        starSystemInfo.mainBodyUnitySizeScale = pregenned.mainBodyUnitySizeScale;
+        starSystemInfo.mainBodyPhysicalSize = pregenned.mainBodyPhysicalSize;
+        starSystemInfo.mainBodyDensity = pregenned.mainBodyDensity;
+        starSystemInfo.mainBodyTemperatureKelvin = pregenned.mainBodyTemperatureKelvin;
+        starSystemInfo.hasAsteroidBelt = pregenned.hasAsteroidBelt;
+        starSystemInfo.baseSystemAngle = pregenned.baseSystemAngle;
+
+        starSystemInfo.hotRange = pregenned.hotRange;
+        starSystemInfo.coldRange = pregenned.coldRange;
+        starSystemInfo.habRange = pregenned.habRange;
+        starSystemInfo.asteroidBeltRange = pregenned.asteroidBeltRange;
+
+        starSystemInfo.orbitals = pregenned.orbitals;
+        starSystemInfo.AUFarPlanet = pregenned.AUFarPlanet;
+        starSystemInfo.AUtoSystemScale = pregenned.AUtoSystemScale;
+
+        starSystemInfo.systemName = pregennedData.name;
+        starSystemInfo.generatedSystemSeed = pregennedData.generationSeed;
+        starSystemInfo.systemID = pregennedData.id;
+        starSystemInfo.posX = pregennedData.posX;
+        starSystemInfo.posY = pregennedData.posY;
+        Debug.Log("Position of system is " + starSystemInfo.posX + " " + starSystemInfo.posY);
+        starSystemInfo.systemSize = pregennedData.size;
+        starSystemInfo.systemType = pregennedData.type;
+        
+        Debug.Log("linked id gen is " + starSystemInfo.systemID);
+        
+
+
+        starSystemInfo.linkedSystemIDs = pregennedData.linkedIDs;
+        starSystemInfo.linkedSystemNames = new string[starSystemInfo.linkedSystemIDs.Length];
+        starSystemInfo.linkedSystemPositionsX = new float[starSystemInfo.linkedSystemIDs.Length];
+        starSystemInfo.linkedSystemPositionsY = new float[starSystemInfo.linkedSystemIDs.Length];
+        Debug.Log("and has " + starSystemInfo.linkedSystemIDs.Length);
+        for (int i = 0; i < starSystemInfo.linkedSystemIDs.Length; i++)
+        {
+            starSystemInfo.linkedSystemNames[i] = refGalaxy.solarSystems[starSystemInfo.linkedSystemIDs[i]].name;
+            starSystemInfo.linkedSystemPositionsX[i] = refGalaxy.solarSystems[starSystemInfo.linkedSystemIDs[i]].posX;
+            starSystemInfo.linkedSystemPositionsY[i] = refGalaxy.solarSystems[starSystemInfo.linkedSystemIDs[i]].posY;
+        }
+        starSystemInfo.numberActualLinks = pregennedData.linked;
+
+
+        GenerateSystemObjects(starSystemInfo);
+
+            /*
+             * //Public
+	public int id;
+    public int generationSeed;
+	public float posX;
+	public float posY;
+	public string name;
+	public SolarSystemSize size;
+	public SolarSystemType type;
+	public bool generated = false;
+	public int[] linkedIDs;
+	public int linked;
+             * */
+    }
+
+    public SolarSystem GetSystemFromGen(int xC, int yC, int rS) //TODO: if types are generated inside gal gen, then those will need to get passed in here and set as types for generation, as otherwise this class generates everything from scratch.
+    {
+        
+        GenerateSystem(xC, yC, rS);
+
+        var solarReturn = new SolarSystem();
+        solarReturn.systemDistanceScaleMod = starSystemInfo.systemDistanceScaleMod;
+        solarReturn.mainBodyType = starSystemInfo.mainBodyType;
+        solarReturn.systemSize = starSystemInfo.systemSize;
+        solarReturn.systemType = starSystemInfo.systemType;
+        solarReturn.mainBodyUnitySizeScale = starSystemInfo.mainBodyUnitySizeScale;
+        solarReturn.mainBodyPhysicalSize = starSystemInfo.mainBodyPhysicalSize;
+        solarReturn.mainBodyDensity = starSystemInfo.mainBodyDensity;
+        solarReturn.mainBodyTemperatureKelvin = starSystemInfo.mainBodyTemperatureKelvin;
+        solarReturn.hasAsteroidBelt = starSystemInfo.hasAsteroidBelt;
+        solarReturn.baseSystemAngle = starSystemInfo.baseSystemAngle;
+
+        solarReturn.hotRange = starSystemInfo.hotRange;
+        solarReturn.coldRange = starSystemInfo.coldRange;
+        solarReturn.habRange = starSystemInfo.habRange;
+        solarReturn.asteroidBeltRange = starSystemInfo.asteroidBeltRange;
+
+        solarReturn.orbitals = starSystemInfo.orbitals;
+        solarReturn.AUFarPlanet = starSystemInfo.AUFarPlanet;
+        solarReturn.AUtoSystemScale = starSystemInfo.AUtoSystemScale;
+
+        /*
+         * 
+         * 
+            public int id;
+            public int generationSeed;
+            public float posX;
+            public float posY;
+            public string name;
+            public SolarSystemSize size;
+            public SolarSystemType type;
+            public bool generated = true;
+            public int[] linkedIDs;
+            public int linked;
+            //from Generation_Solar_System
+            public float systemDistanceScaleMod;
+            public Generation_Solar_System.STARTEMPERATURES_TYPES mainBodyType;
+            public SolarSystemSize systemSize;
+            public SolarSystemType systemType;
+            public float mainBodyUnitySizeScale;
+            public float mainBodyPhysicalSize;
+            public float mainBodyDensity;
+            public float mainBodyTemperatureKelvin;
+            public bool hasAsteroidBelt;
+            public float baseSystemAngle; //for elliptical orbits along same line-ish
+
+            public Generation_Solar_System.Star_Region_Range hotRange;
+            public Generation_Solar_System.Star_Region_Range coldRange;
+            public Generation_Solar_System.Star_Region_Range habRange;
+            public Generation_Solar_System.Star_Region_Range asteroidBeltRange;
+
+            public List<OrbitableInfo> orbitals = new List<OrbitableInfo>();
+            //public List<GameObject> orbitalGameobjects = new List<GameObject>();
+         * */
+
+
+
+        return solarReturn;
+    }
+
+    public void GenerateSystem(float xC, float yC, int rS)  
+    {
+        rS += 11521; //avoid 0
         //depending on necessities: may need to dry-generate system objects thru script only, then pass into system gen later. Example: ability to click on map and run simplified version of this to get 
         //star (color, properties, etc), number of planets and types, etc, without entering a system scene.  this can be achieved thru not generating any gameobjects until a later phase.
 
-
-        Random.InitState((xC + yC) * rS + ((xC * yC) % rS)); //note: the default random function may not be desirable, replace if necessary.
+        //Debug.Log("doing generate of " + xC + " " + yC + " " + rS);
+        Random.InitState((int)((xC + yC) * 10000f) * rS + ((int)((xC * yC) * 10000f) % rS)); //note: the default random function may not be desirable, replace if necessary.
         
         starSystemInfo = new StarSystemInfo();
-        starSystemInfo.generatedSystemSeed = (xC + yC) * rS + ((xC * yC) % rS);
-        starSystemInfo.systemName = "Rigel"; //test name
+        starSystemInfo.generatedSystemSeed = (int)((xC + yC) * 10000f) * rS + ((int)((xC * yC) * 10000f) % rS);
+        starSystemInfo.systemName = sysNameGen;
+        
+
+
 
         int randSize = Random.Range(0, 4);
         int randStarType = Random.Range(0, 15);
-        SYSTEM_SIZE size = (SYSTEM_SIZE)randSize;
+        SolarSystemSize size = (SolarSystemSize)randSize;
         
-        SYSTEM_TYPE type = SYSTEM_TYPE.STAR;
+        SolarSystemType type = SolarSystemType.Star;
         STARTEMPERATURES_TYPES star = (STARTEMPERATURES_TYPES)randStarType;
         if (FORCESYSTEMTYPE)
         {
@@ -184,11 +343,12 @@ public class Generation_Solar_System : MonoBehaviour
         float starDistanceMod = starDistanceMods[(int)star];
         float starDensity = 1.4f;  //g/cm3   add density values later to be able to more easily determine mass and gravity
                                    //mass can be calculated from diameter and density: calculate volume from diameter -> radius... V = 4/3 * pi * r^3, Mass = density times volume
+                     
 
 
         //modify star size or temperature here for variance
         starUnitySize += (Random.Range(-starUnitySize / 10f, starUnitySize / 10f)); //current assets sprite size = you need to be about 25 dist away at 1.0 scale
-        Debug.Log("star unity size is " + starUnitySize);
+        //Debug.Log("star unity size is " + starUnitySize);
         float starMinDistCalc = (starUnitySize + starUnitySize/2f )* 25f; //*  //one half of star size for corona
         //account for distance scale of system
         starMinDistCalc /= starDistanceMod; //for .2, dist will be say, 50 / .2 = 250
@@ -196,9 +356,9 @@ public class Generation_Solar_System : MonoBehaviour
         float starDiameter = starUnitySize * diameterBaseOfDefaultMiles; //based on diameter of Sol
         float mandatoryMinAU = .25f; //brown dwarf sanity
         float minRangeAU = starMinDistCalc;
-        Debug.Log("min range unity size is " + minRangeAU);
+        //Debug.Log("min range unity size is " + minRangeAU);
         minRangeAU /= AUtoSystemScale;
-        Debug.Log("min range AU scale is " + minRangeAU);
+        //Debug.Log("min range AU scale is " + minRangeAU);
         if (minRangeAU < mandatoryMinAU)
         {
             minRangeAU = mandatoryMinAU;
@@ -244,8 +404,9 @@ public class Generation_Solar_System : MonoBehaviour
         float systemBaseAngle = Random.Range(0, 360f);
         starSystemInfo.SetCelestialBodyInfo(star, size, type,  starUnitySize, starDiameter, starDensity, starTemperature, hasAsteroidBelt, systemBaseAngle);
         starSystemInfo.SetRegionRangeValues(hotRange, habRange, coldRange, asteroidRange);
-        starSystemInfo.SetDistanceScale(starDistanceMod); //huge stars need stuff closer while tiny stars need to push stuff further out
-
+        starSystemInfo.SetDistanceScale(starDistanceMod, AUtoSystemScale); //huge stars need stuff closer while tiny stars need to push stuff further out
+        starSystemInfo.posX = xC;
+        starSystemInfo.posY = yC;
 
         //roll planets count depending on system size.
         int numPlanets = 0;
@@ -254,7 +415,7 @@ public class Generation_Solar_System : MonoBehaviour
         int minSetPlanets = 0;
         switch (size) //clamping some values for certain system star sizes
         {
-            case SYSTEM_SIZE.SMALL:
+            case SolarSystemSize.Small:
                 if (smallSystem.planetsMax <= maxValPlanets)
                 {
                     minSetPlanets = 1;
@@ -267,7 +428,7 @@ public class Generation_Solar_System : MonoBehaviour
                 }
                 
                 break;
-            case SYSTEM_SIZE.MEDIUM:
+            case SolarSystemSize.Medium:
                 if (mediumSystem.planetsMax <= maxValPlanets)
                 {
                     minSetPlanets = maxValPlanets / 2;
@@ -279,7 +440,7 @@ public class Generation_Solar_System : MonoBehaviour
                     maxSetPlanets = mediumSystem.planetsMax;
                 }
                 break;
-            case SYSTEM_SIZE.LARGE:
+            case SolarSystemSize.Large:
                 if (smallSystem.planetsMax <= maxValPlanets)
                 {
                     minSetPlanets = maxValPlanets / 2;
@@ -291,7 +452,7 @@ public class Generation_Solar_System : MonoBehaviour
                     maxSetPlanets = largeSystem.planetsMax;
                 }
                 break;
-            case SYSTEM_SIZE.XLARGE:
+            case SolarSystemSize.XLarge:
                 if (smallSystem.planetsMax <= maxValPlanets)
                 {
                     minSetPlanets = maxValPlanets / 2;
@@ -305,11 +466,12 @@ public class Generation_Solar_System : MonoBehaviour
                 break;
         }
         numPlanets = Random.Range(minSetPlanets, maxSetPlanets);
-        Debug.Log("number of planets is " + numPlanets);
+        starSystemInfo.AUtoSystemScale = AUtoSystemScale;
+        //Debug.Log("number of planets is " + numPlanets);
         List<OrbitableInfo> orbitalsGenerated = new List<OrbitableInfo>();
         for (int i = 0; i < numPlanets; i++)
         {
-            Debug.Log("generating planet " + i);
+            //Debug.Log("generating planet " + i);
             OrbitableInfo genPlanet = GeneratePlanet(ref orbitalsGenerated, starSystemInfo.systemDistanceScaleMod, hotRange, habRange, coldRange, asteroidRange, true, starSystemInfo.generatedSystemSeed, i, starSystemInfo.baseSystemAngle);
             if (genPlanet != null)
             {
@@ -318,7 +480,7 @@ public class Generation_Solar_System : MonoBehaviour
             }
             else
             {
-                Debug.Log("<b><color=red>NO PLANET GENNED</color></b>");
+                //Debug.Log("<b><color=red>NO PLANET GENNED</color></b>");
             }
             
             if ( i > 75) //hard limit for now
@@ -498,8 +660,8 @@ public class Generation_Solar_System : MonoBehaviour
             List<Star_Region_Range> addRanges = new List<Star_Region_Range>();
             Star_Region_Range fullRangeBase = new Star_Region_Range(hotRange.rangeMinAU, coldRange.rangeMaxAU);
             fullRanges.Add(fullRangeBase);
-            Debug.Log("base range is " + fullRangeBase.rangeMinAU + " to " + fullRangeBase.rangeMaxAU);
-            Debug.Log("target range is " + targetRange.rangeMinAU + " to " + targetRange.rangeMaxAU);
+            //Debug.Log("base range is " + fullRangeBase.rangeMinAU + " to " + fullRangeBase.rangeMaxAU);
+            //Debug.Log("target range is " + targetRange.rangeMinAU + " to " + targetRange.rangeMaxAU);
 
             //exclusion 5 cases:
             //not near, ignore
@@ -618,7 +780,7 @@ public class Generation_Solar_System : MonoBehaviour
                     }
                     else //move up till we cant anymore, if we never set it back then by default we are done.
                     {
-                        Debug.Log("max trigger 2: point of " + targetRange.rangeMaxAU + " not within " + fullRanges[i].rangeMinAU + " to " + fullRanges[i].rangeMaxAU);
+                        //Debug.Log("max trigger 2: point of " + targetRange.rangeMaxAU + " not within " + fullRanges[i].rangeMinAU + " to " + fullRanges[i].rangeMaxAU);
                         if (foundMin)
                         {
                             if (targetRange.rangeMaxAU > fullRanges[i].rangeMinAU)
@@ -643,7 +805,7 @@ public class Generation_Solar_System : MonoBehaviour
                 //Debug.Log("no max found!");
                 return null;
             }
-            Debug.Log("max is set to " + maxSpawnable);
+            //Debug.Log("max is set to " + maxSpawnable);
             //pack together potential spawning regions
             List<Star_Region_Range> spawnableRanges = new List<Star_Region_Range>();
             spawnableRanges.Add(new Star_Region_Range(minSpawnable, fullRanges[minIndex].rangeMaxAU));
@@ -728,8 +890,8 @@ public class Generation_Solar_System : MonoBehaviour
         planetInfo.distanceFromCenterAU = AUDistance;
         planetInfo.distanceFromCenterUnityScale = unityDistance;
         planetInfo.planetUnityScale = modifiedSizeScale;
-        Debug.Log("final AU distance is " + AUDistance);
-        Debug.Log("final unity distance is " + planetInfo.distanceFromCenterUnityScale);
+        //Debug.Log("final AU distance is " + AUDistance);
+        //Debug.Log("final unity distance is " + planetInfo.distanceFromCenterUnityScale);
         float baseSizeMod = .04f;
         float baseAngleMod = 1.0f;
         if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_HAB)
@@ -747,15 +909,18 @@ public class Generation_Solar_System : MonoBehaviour
             baseAngleMod = 3.0f;
             baseSizeMod = .07f;
         }
-        Debug.Log("base size mod is " + baseSizeMod);
-        Debug.Log("sizescale is " + planetInfo.distanceFromCenterUnityScale);
+        //Debug.Log("base size mod is " + baseSizeMod);
+        //Debug.Log("sizescale is " + planetInfo.distanceFromCenterUnityScale);
         float sizeX = planetInfo.distanceFromCenterUnityScale;
         float randMod = Random.Range(.85f, .85f + baseSizeMod);
-        Debug.Log("rand mod is " + randMod);
+        //Debug.Log("rand mod is " + randMod);
         float sizeY = randMod * planetInfo.distanceFromCenterUnityScale;
-        planetInfo.orbitSize = new Vector2(sizeX, sizeY);
-        Debug.Log("actual orbit size is " + planetInfo.orbitSize);
-        planetInfo.orbitOffset = new Vector2(Random.Range(AUtoSystemScale / 80f * -1f, AUtoSystemScale / 80f), Random.Range((AUtoSystemScale / 80f) * -1f, AUtoSystemScale / 80f));
+        planetInfo.orbitSizeX = sizeX;
+        planetInfo.orbitSizeY = sizeY;
+        //Debug.Log("actual orbit size is " + planetInfo.orbitSize);
+        var v2Offset = new Vector2(Random.Range(AUtoSystemScale / 80f * -1f, AUtoSystemScale / 80f), Random.Range((AUtoSystemScale / 80f) * -1f, AUtoSystemScale / 80f));
+        planetInfo.orbitOffsetX = v2Offset.x;
+        planetInfo.orbitOffsetY = v2Offset.y;
         
         
         planetInfo.orbitAngle = baseAngle + Random.Range(-baseAngleMod, baseAngleMod); //along system angle for less collisions on elliptical orbits
@@ -783,7 +948,9 @@ public class Generation_Solar_System : MonoBehaviour
         //Debug.Log("orbital velocity modifier is " + orbitalVelocityModifier);
         float modSpeed = baseSpeedDefaultEarthMPH * orbitalVelocityModifier;
         //Debug.Log("modspeed is " + modSpeed);
+        //Debug.Log("modspeed is " + modSpeed);
         float orbitPeriod = 1.0f / Mathf.Sqrt(planetInfo.distanceFromCenterAU) * modSpeed;
+        //Debug.Log("orbitperiod is " + orbitPeriod);
         //Debug.Log("orbit period is " + orbitPeriod);
         planetInfo.orbitSpeed = orbitPeriod; //note: this is actually deterministic depending on star / central object mass/gravity and distance away, calculations above
         planetInfo.rotatesClockwise = (Random.Range(0.0f, 1.0f) < .5f? true: false);
@@ -836,14 +1003,14 @@ public class Generation_Solar_System : MonoBehaviour
             chanceMoonIsAPlanet = hotRangeMoonIsAnotherPlanetChance;
             maxMoons = hotRangeMoonMax;
         }
-        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_HOT)
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_HAB)
         {
             moonChance = habRangeMoonChance;
             chanceOfAdditionalMoons = habChanceOfAdditionalMoons;
             chanceMoonIsAPlanet = habRangeMoonIsAnotherPlanetChance;
             maxMoons = habRangeMoonMax;
         }
-        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_HOT)
+        if (planetInfo.orbitalRange == SYSTEM_REGION_RANGES.REGION_COLD)
         {
             moonChance = coldRangeMoonChance;
             chanceOfAdditionalMoons = coldChanceOfAdditionalMoons;
@@ -872,7 +1039,7 @@ public class Generation_Solar_System : MonoBehaviour
         {
             //gen moon into orbital
             //each moon is similar to a planet but it orbits the planet instead, so all references to its orbitable target is the planet proper.
-            OrbitableInfo newMoon = new OrbitableInfo();
+            OrbitableInfoMoon newMoon = new OrbitableInfoMoon();
 
             newMoon.orbitalID = i;
             newMoon.orbitalName = "Moon " + i;
@@ -923,8 +1090,12 @@ public class Generation_Solar_System : MonoBehaviour
             float moonUnityScale = .05f;
             moonUnityScale += Random.Range(-.01f, .02f);
             newMoon.planetUnityScale = moonUnityScale;
-            newMoon.orbitSize = new Vector2(newMoon.distanceFromCenterUnityScale, newMoon.distanceFromCenterUnityScale + Random.Range(-newMoon.distanceFromCenterUnityScale / 10f, newMoon.distanceFromCenterUnityScale / 10f));
-            newMoon.orbitOffset = new Vector2(Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f), Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f)); //may need tweaking for proper offset ranges.
+            var v2Orbsize = new Vector2(newMoon.distanceFromCenterUnityScale, newMoon.distanceFromCenterUnityScale + Random.Range(-newMoon.distanceFromCenterUnityScale / 10f, newMoon.distanceFromCenterUnityScale / 10f));
+            newMoon.orbitSizeX = v2Orbsize.x;
+            newMoon.orbitSizeY = v2Orbsize.y;
+            var v2OrbOffset = new Vector2(Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f), Random.Range((AUtoSystemScale / 200f) * -1f, AUtoSystemScale / 200f)); //may need tweaking for proper offset ranges.
+            newMoon.orbitOffsetX = v2OrbOffset.x;
+            newMoon.orbitOffsetY = v2OrbOffset.y;
 
             newMoon.orbitAngle = Random.Range(0, 360f);
             //velocity of Satellite motion: equal to SQRT of (G * Mcentral)/R^2   where G = 6.673 * 10^-11 N * m^2/kg^2
@@ -945,8 +1116,8 @@ public class Generation_Solar_System : MonoBehaviour
             newMoon.orbitSpeed = orbitPeriod; //may need to tweak moon speed differently
             newMoon.orbitStart = Random.Range(0, 50);
             newMoon.rotatesClockwise = Random.Range(0, 1.0f) < .5f ? true : false;
-            newMoon.numMoons = 0;
-            newMoon.moons = null;
+            //newMoon.numMoons = 0;
+            //newMoon.moons = null;
 
             planetInfo.moons.Add(newMoon);
         }
@@ -958,26 +1129,42 @@ public class Generation_Solar_System : MonoBehaviour
     {
         Debug.Log("Generating System Objects");
         //generate system gameobject, add any system handler scripts to this
-        if (systemContainer)
+        if (!systemContainer)
         {
-            systemContainer.SetActive(false); //NOTE: for debug gen only
+            Debug.Log("making new container");
+            systemContainer = new GameObject();
+            //    DestroyImmediate(systemContainer);
+            //    systemContainer = null;
         }
-        systemContainer = new GameObject();
+        //systemContainer = new GameObject();
         systemContainer.transform.parent = this.transform;
-        systemContainer.name = "System Container " + xCoord + " : " + yCoord + " : " + infoBase.systemName;
+        systemContainer.name = "System Container " + infoBase.posX + " : " + infoBase.posY + " : " + infoBase.systemName;
 
         GameObject centralObject = GenerateCentralObject(infoBase);
         centralObject.transform.parent = systemContainer.transform;
         for (int i = 0; i < infoBase.orbitals.Count; i++)
         {
-            Debug.Log("generating orbitals count for " + (i+1) + " of " + infoBase.orbitals.Count );
+            //Debug.Log("generating orbitals count for " + (i+1) + " of " + infoBase.orbitals.Count );
             GameObject newPlanet = GeneratePlanetGameobject(infoBase.orbitals[i], infoBase, systemContainer.gameObject);
             for (int m = 0; m < infoBase.orbitals[i].numMoons; m++)
             {
-                Debug.Log("Genning moon " + (m+1));
+                //Debug.Log("Genning moon " + (m+1));
                 GameObject newMoon = GenerateMoonGameobject(infoBase.orbitals[i].moons[m], newPlanet, infoBase);
             }
         }
+
+        if (infoBase.linkedSystemIDs != null)
+        {
+            int[] linkIDs = new int[infoBase.linkedSystemIDs.Length];
+            Vector2[] linkPositions = new Vector2[infoBase.linkedSystemPositionsX.Length];
+            for (int i = 0; i < infoBase.linkedSystemIDs.Length; i++)
+            {
+                linkIDs[i] = infoBase.linkedSystemIDs[i];
+                linkPositions[i] = new Vector2(infoBase.linkedSystemPositionsX[i], infoBase.linkedSystemPositionsY[i]);
+            }
+            GenerateExitObjects(infoBase, new Vector2(infoBase.posX, infoBase.posY), linkPositions, infoBase.systemID, linkIDs, infoBase.systemName, infoBase.linkedSystemNames);
+        }
+        
 
     }
 
@@ -1003,6 +1190,23 @@ public class Generation_Solar_System : MonoBehaviour
     //->GO:Gravity Field
     //     +PlanetGravity.cs -> set values by planet
     //     +circlecollider2d
+    void GenerateExitObjects(StarSystemInfo infoBase, Vector2 thisStarPosition, Vector2[] linkedStarPositions, int thisStarID, int[] linkedStarIDs, string thisStarName, string[] linkedStarNames)
+    {
+        Debug.Log("Size scale is " + infoBase.AUtoSystemScale + " and " + infoBase.systemDistanceScaleMod);
+        //Debug.Log("and far planet is " + infoBase.AUFarPlanet);
+        float sysSizePlacement = (infoBase.AUFarPlanet + .25f) * infoBase.AUtoSystemScale * infoBase.systemDistanceScaleMod;
+        for (int i = 0; i < linkedStarPositions.Length && i < infoBase.numberActualLinks; i++)
+        {
+            GameObject newExit = Instantiate(systemLinkObjectPrefab);
+            newExit.transform.parent = this.transform;
+            var sExit = newExit.GetComponent<SystemExit>();
+
+
+            sExit.GenExit(linkedStarPositions[i].x, linkedStarPositions[i].y, infoBase.posX, infoBase.posY, linkedStarNames[i], sysSizePlacement);
+            sExit.linkID = linkedStarIDs[i];
+        }
+    }
+
 
     GameObject GenerateCentralObject(StarSystemInfo infoBase)
     {
@@ -1036,7 +1240,7 @@ public class Generation_Solar_System : MonoBehaviour
 
     GameObject GeneratePlanetGameobject(OrbitableInfo planetInfo, StarSystemInfo infoBase, GameObject centerObject)
     {
-        Debug.Log("generating system planet object");
+        //Debug.Log("generating system planet object");
         GameObject newPlanet = new GameObject(planetInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
         newPlanet.transform.parent = centerObject.transform;
         //var orbitCopy = newPlanet.AddComponent<OrbitableInfo>();
@@ -1089,8 +1293,8 @@ public class Generation_Solar_System : MonoBehaviour
         var orbitSet = newPlanet.GetComponent<Orbitable>();
         orbitSet.speed = planetInfo.orbitSpeed;
         orbitSet.star = centerObject;
-        orbitSet.size = planetInfo.orbitSize;
-        orbitSet.offset = planetInfo.orbitOffset;
+        orbitSet.size = new Vector2(planetInfo.orbitSizeX, planetInfo.orbitSizeY);
+        orbitSet.offset = new Vector2(planetInfo.orbitOffsetX, planetInfo.orbitOffsetY);
         orbitSet.angle = planetInfo.orbitAngle;
         orbitSet.clockWise = planetInfo.rotatesClockwise;
         orbitSet.drawGizmo = true;
@@ -1098,7 +1302,7 @@ public class Generation_Solar_System : MonoBehaviour
         return newPlanet;
     }
 
-    GameObject GenerateMoonGameobject(OrbitableInfo moonInfo, GameObject parentObject, StarSystemInfo infoBase)
+    GameObject GenerateMoonGameobject(OrbitableInfoMoon moonInfo, GameObject parentObject, StarSystemInfo infoBase)
     {
         GameObject newMoon = new GameObject(moonInfo.orbitalName, typeof(CapsuleCollider2D), typeof(PlanetHitDetection), typeof(Orbitable), typeof(Rotate));
         newMoon.transform.parent = parentObject.transform;
@@ -1152,8 +1356,8 @@ public class Generation_Solar_System : MonoBehaviour
         var orbitSet = newMoon.GetComponent<Orbitable>();
         orbitSet.speed = moonInfo.orbitSpeed;
         orbitSet.star = parentObject;
-        orbitSet.size = moonInfo.orbitSize;
-        orbitSet.offset = moonInfo.orbitOffset;
+        orbitSet.size = new Vector2(moonInfo.orbitSizeX, moonInfo.orbitSizeY);
+        orbitSet.offset = new Vector2(moonInfo.orbitOffsetX, moonInfo.orbitOffsetY);
         orbitSet.angle = moonInfo.orbitAngle;
         orbitSet.clockWise = moonInfo.rotatesClockwise;
         orbitSet.drawGizmo = true;

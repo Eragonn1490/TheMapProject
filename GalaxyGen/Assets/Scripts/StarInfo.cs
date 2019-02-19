@@ -15,6 +15,10 @@ public class StarInfo : MonoBehaviour
 	public static RectTransform starInfo;
 	public static CanvasScaler cs;
 
+    public int starID;
+    public int[] starLinkIDs;
+    public Vector2[] starLinkPositions;
+
 	private void OnMouseEnter()
 	{
 		starInfo.gameObject.SetActive(true);
@@ -27,4 +31,10 @@ public class StarInfo : MonoBehaviour
 		starInfo.localPosition = Vector3.zero;
 		starInfo.gameObject.SetActive(false);
 	}
+
+    private void OnMouseDown()
+    {
+        Debug.Log("get mouse down on " + this.starName +  " " + this.starPos + " " + this.starID);
+        GalaxyHelper.instance.LoadSystemFromMap(starPos.x, starPos.y, starID, starName);
+    }
 }

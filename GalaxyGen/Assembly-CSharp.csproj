@@ -61,6 +61,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\CamTrackPlayer.cs" />
+    <Compile Include="Assets\GalaxyHelper.cs" />
     <Compile Include="Assets\Scripts\Asteroid.cs" />
     <Compile Include="Assets\Scripts\AsteroidBelt.cs" />
     <Compile Include="Assets\Scripts\CameraMove.cs" />
@@ -74,6 +76,7 @@
     <Compile Include="Assets\Scripts\LookAt.cs" />
     <Compile Include="Assets\Scripts\Orbitable.cs" />
     <Compile Include="Assets\Scripts\OrbitableInfo.cs" />
+    <Compile Include="Assets\Scripts\OrbitableInfoMoon.cs" />
     <Compile Include="Assets\Scripts\PlanetGravity.cs" />
     <Compile Include="Assets\Scripts\PlanetHitDetection.cs" />
     <Compile Include="Assets\Scripts\PlayerController.cs" />
@@ -84,6 +87,7 @@
     <Compile Include="Assets\Scripts\StarSystemInfo.cs" />
     <Compile Include="Assets\Scripts\SystemInfo.cs" />
     <Compile Include="Assets\Scripts\Zoom.cs" />
+    <Compile Include="Assets\SystemExit.cs" />
     <None Include="Assets\Shaders\UnlitColorTransparent.shader" />
     <None Include="Assets\GalaxyGen\Names.txt" />
     <Reference Include="Unity.TextMeshPro.Editor">

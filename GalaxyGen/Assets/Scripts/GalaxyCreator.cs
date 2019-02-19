@@ -47,21 +47,50 @@ public class GalaxyCreator : MonoBehaviour
 		//Create galaxy parent
 		galaxyObj = new GameObject("Galaxy");
 
-		//Load galaxy
-		TextAsset gal = Resources.Load<TextAsset>(galaxyFile);
-		Stream stream = new MemoryStream(gal.bytes);
-		BinaryFormatter formatter = new BinaryFormatter();
-		galaxy = formatter.Deserialize(stream) as Galaxy;
+        //Load galaxy
+        if (GalaxyHelper.instance.gennedGalaxy.isGenned)
+        {
+            Debug.Log("setting galaxy to preloaded");
+            galaxy = GalaxyHelper.instance.gennedGalaxy;
+        }
+        else
+        {
+            Debug.Log("loading galaxy from file");
+            TextAsset gal = Resources.Load<TextAsset>(galaxyFile);
+            Stream stream = new MemoryStream(gal.bytes);
+            BinaryFormatter formatter = new BinaryFormatter();
+            galaxy = formatter.Deserialize(stream) as Galaxy;
+            galaxy.isGenned = true;
+            GalaxyHelper.instance.gennedGalaxy = galaxy; //load to the helper for keeping data.
+        }
+        
+        
 
-		//Create each star
+        //Create each star
+        List<SolarSystemData> sysGets = new List<SolarSystemData>();
 		foreach (SolarSystemData s in galaxy.solarSystems)
 		{
-			GameObject obj = Instantiate(starPrefab);
-			obj.transform.position = new Vector2(s.posX, s.posY);
-			obj.transform.SetParent(galaxyObj.transform);
-			StarInfo i = obj.GetComponent<StarInfo>();
-			i.starName = s.name;
-			i.starPos = new Vector3(s.posX, s.posY);
+            sysGets.Add(s);
+			
 		}
-	}
+        for (int i = 0; i < sysGets.Count; i++)
+        {
+            GameObject obj = Instantiate(starPrefab);
+            obj.transform.position = new Vector2(sysGets[i].posX, sysGets[i].posY);
+            obj.transform.SetParent(galaxyObj.transform);
+            StarInfo sInfo = obj.GetComponent<StarInfo>();
+            sInfo.starName = sysGets[i].name;
+            sInfo.starPos = new Vector3(sysGets[i].posX, sysGets[i].posY);
+            sInfo.starID = sysGets[i].id;
+            sInfo.starLinkIDs = new int[sysGets[i].linkedIDs.Length];
+            sInfo.starLinkPositions = new Vector2[sysGets[i].linkedIDs.Length];
+            for (int j = 0; j < sysGets[i].linkedIDs.Length; j++)
+            {
+                sInfo.starLinkIDs[j] = sysGets[i].linkedIDs[j];
+                sInfo.starLinkPositions[j] = new Vector2(sysGets[sInfo.starLinkIDs[j]].posX, sysGets[sInfo.starLinkIDs[j]].posY);
+            }
+        }
+        
+
+    }
 }

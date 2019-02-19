@@ -124,8 +124,13 @@ public class GenWindow : EditorWindow
 			data.ringSize = EditorGUILayout.Slider("Ring Size", data.ringSize, 0.99f, 0.001f);
 		}
 
-		//Files
-		EditorGUILayout.Space();
+        //Seed
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Random Seed", boldStyle);
+        data.randSeed = EditorGUILayout.IntField("Galaxy Seed", data.randSeed);
+
+        //Files
+        EditorGUILayout.Space();
 		EditorGUILayout.LabelField("File Paths", boldStyle);
 
 		//Name file field
@@ -161,6 +166,8 @@ public class GenWindow : EditorWindow
 		if (GUILayout.Button("Preview", GUILayout.Height(40)))
 			GalaxyGen.PreviewData(data);
 
-		EditorGUILayout.EndScrollView();
+        
+
+        EditorGUILayout.EndScrollView();
 	}
 }

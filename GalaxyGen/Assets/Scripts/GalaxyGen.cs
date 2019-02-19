@@ -6,13 +6,15 @@ using UnityEditor;
 
 public class GalaxyGen
 {
+    
 	static float debugCubeScale = 0.05f;
 
 	//Returns false on fail
 	public static bool GenGalaxy(GalaxyGenData data)
 	{
-		//Randomly choose star count
-		int starCount = Random.Range(data.minStar, data.maxStar);
+        //Randomly choose star count
+        Random.InitState(data.randSeed);
+        int starCount = Random.Range(data.minStar, data.maxStar);
 
 		//Generate based on shape
 		List<Vector2> positions;
@@ -47,7 +49,8 @@ public class GalaxyGen
 		{
 			solarSystems[i] = new SolarSystemData();
 			solarSystems[i].id = i;
-			solarSystems[i].posX = positions[i].x;
+            solarSystems[i].generationSeed = data.randSeed;
+            solarSystems[i].posX = positions[i].x;
 			solarSystems[i].posY = positions[i].y;
 			solarSystems[i].name = names[Random.Range(0, names.Length)];
 			solarSystems[i].size = (SolarSystemSize)Random.Range(0, 2);
@@ -67,14 +70,20 @@ public class GalaxyGen
 
 		//Create galaxy
 		Galaxy galaxy = new Galaxy();
+        galaxy.randSeed = data.randSeed;
 		galaxy.solarSystems = solarSystems;
 		galaxy.generatedSystems = new SolarSystem[solarSystems.Length];
+        for (int i = 0; i < galaxy.solarSystems.Length; i++)
+        {
+            galaxy.generatedSystems[i] = SetupSystemsFromGen(galaxy.solarSystems[i]);
+            
+        }
 
 		//Save galaxy
-		if (!DataSerializer.CheckExistence(data.saveFileDir))
+		//if (!DataSerializer.CheckExistence(data.saveFileDir))
 			DataSerializer.Save(galaxy, data.saveFileDir);
-		else
-			return false;
+		//else
+		//	return false;
 
 		//Refresh assets
 		AssetDatabase.Refresh();
@@ -83,10 +92,22 @@ public class GalaxyGen
 		return true;
 	}
 
+    public static SolarSystem SetupSystemsFromGen(SolarSystemData data)
+    {
+        var sysGen = GameObject.FindObjectOfType<Generation_Solar_System>();
+        
+        
+        var systemGet = sysGen.GetSystemFromGen((int)(data.posX), (int)(data.posY), data.generationSeed);
+
+
+        return systemGet;
+    }
+
 	public static void PreviewData(GalaxyGenData data)
 	{
-		//Randomly choose star count
-		int starCount = Random.Range(data.minStar, data.maxStar);
+        //Randomly choose star count
+        Random.InitState(data.randSeed);
+        int starCount = Random.Range(data.minStar, data.maxStar);
 
 		//Generate based on shape
 		List<Vector2> positions;
@@ -242,13 +263,13 @@ public class GalaxyGen
 		int rand = Random.Range(0, data.fullWeight + data.blackHoleWeight + data.emptyWeight);
 
 		if (rand < data.fullWeight)
-			return SolarSystemType.Full;
+			return SolarSystemType.Star;
 		else if (rand < data.blackHoleWeight)
 			return SolarSystemType.Blackhole;
 		else if (rand < data.emptyWeight)
 			return SolarSystemType.Empty;
 		else
-			return SolarSystemType.Full;
+			return SolarSystemType.Star;
 	}
 
 	private static void SetupLinks(ref SolarSystemData[] systems, GalaxyGenData data)

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 public enum GalaxyShape { Spiral, Elliptical, Irregular, Ring };
 [System.Serializable]
-public enum SolarSystemSize { Small, Medium, Large };
+public enum SolarSystemSize { Small, Medium, Large, XLarge };
 [System.Serializable]
-public enum SolarSystemType { Full, Blackhole, Empty };
+public enum SolarSystemType { Star, Blackhole, Empty, Asteroid };
 
 //Galaxy generation parameters
 public class GalaxyGenData
@@ -45,6 +45,8 @@ public class GalaxyGenData
 
 	//Ring specifics (0-1)
 	public float ringSize = 0.5f;
+
+    public int randSeed;
 }
 
 //Data used for undiscoverd, ungenerated solar system. 
@@ -54,6 +56,7 @@ public class SolarSystemData
 {
 	//Public
 	public int id;
+    public int generationSeed;
 	public float posX;
 	public float posY;
 	public string name;
@@ -68,7 +71,40 @@ public class SolarSystemData
 [System.Serializable]
 public class SolarSystem
 {
-	//TODO
+    //since there is always both, dont duplicate this
+    //public int id;
+    //public int generationSeed;
+    //public float posX;
+    //public float posY;
+    //public string name;
+    //public SolarSystemSize size;
+    //public SolarSystemType type;
+    //public bool generated = true;
+    //public int[] linkedIDs;
+    //public int linked;
+
+    //from Generation_Solar_System
+    public float systemDistanceScaleMod;
+    public Generation_Solar_System.STARTEMPERATURES_TYPES mainBodyType;
+    public SolarSystemSize systemSize;
+    public SolarSystemType systemType;
+    public float mainBodyUnitySizeScale;
+    public float mainBodyPhysicalSize;
+    public float mainBodyDensity;
+    public float mainBodyTemperatureKelvin;
+    public bool hasAsteroidBelt;
+    public float baseSystemAngle; //for elliptical orbits along same line-ish
+    public float AUFarPlanet;
+    public float AUtoSystemScale;
+
+    public Generation_Solar_System.Star_Region_Range hotRange;
+    public Generation_Solar_System.Star_Region_Range coldRange;
+    public Generation_Solar_System.Star_Region_Range habRange;
+    public Generation_Solar_System.Star_Region_Range asteroidBeltRange;
+
+    public List<OrbitableInfo> orbitals = new List<OrbitableInfo>();
+    //public List<GameObject> orbitalGameobjects = new List<GameObject>();
+
 }
 
 //Generated galaxy class
@@ -78,4 +114,6 @@ public class Galaxy
 	//Generated solar systems used if solarSystems[i].generated
 	public SolarSystemData[] solarSystems;
 	public SolarSystem[] generatedSystems;
+    public int randSeed;
+    public bool isGenned = false;
 }

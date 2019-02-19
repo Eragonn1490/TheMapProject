@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController instance;
+
     public float m_Speed;
     public float m_RotationSpeed;
     public Rigidbody2D m_Rbody;
@@ -13,13 +15,26 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        GameProps.m_PC = this;
-        GameProps.PLAYER_OBJECT = this.gameObject;
 
-        GameObject temp = GameObject.Find("Loading_MAIN_TXT");
+        if (!instance)
+        {
+            instance = this;
+            GameProps.m_PC = this;
+            GameProps.PLAYER_OBJECT = this.gameObject;
 
-        if (temp != null)
-            temp.SetActive(false);
+            GameObject temp = GameObject.Find("Loading_MAIN_TXT");
+
+            if (temp != null)
+                temp.SetActive(false);
+
+            DontDestroyOnLoad(this.gameObject);
+        }
+        else
+        {
+            Destroy(this.gameObject);
+            return;
+        }
+        
     }
 
     private void Update()
