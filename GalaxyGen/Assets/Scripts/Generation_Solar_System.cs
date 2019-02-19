@@ -35,10 +35,10 @@ public class Generation_Solar_System : MonoBehaviour
     private float habRangeMoonIsAnotherPlanetChance = .05f;
     private float coldRangeMoonChance = .75f;
     private float coldChanceOfAdditionalMoons = .75f;
-    private int coldRangeMoonMax = 12;
+    private int coldRangeMoonMax = 6;
     private float coldRangeMoonIsAnotherPlanetChance = .2f; //less chance than hot but much more potential chances
     private float gasChanceMoonModifier = 3.0f;
-    private int gasChanceMoonMaxModifier = 4;
+    private int gasChanceMoonMaxModifier = 2;
     
 
     //some reduction in values for smaller system on number of planets due to scale, can be modified or removed.
@@ -1034,6 +1034,7 @@ public class Generation_Solar_System : MonoBehaviour
                 numMoonsToGen += Random.Range(1, maxMoons);
             }
         }
+        
         planetInfo.numMoons = numMoonsToGen;
         for (int i = 0; i < numMoonsToGen; i++)
         {
